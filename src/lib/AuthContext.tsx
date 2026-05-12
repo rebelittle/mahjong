@@ -21,23 +21,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   async function loadProfile(userId: string) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-    setProfile(data ?? null);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+      if (error) {
+        console.error("Profile fetch error:", error.message);
+        setProfile(null);
+        return;
+      }
+      setProfile((data as Profile | null) ?? null);
+    } catch (err) {
+      // Network error or similar — don't let it crash AuthContext init.
+      console.error("Profile fetch threw:", err);
+      setProfile(null);
+    }
   }
 
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      if (data.session?.user) await loadProfile(data.session.user.id);
-      setLoading(false);
-    });
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(data.session);
+        if (data.session?.user) await loadProfile(data.session.user.id);
+      } catch (err) {
+        console.error("Auth init failed:", err);
+      } finally {
+        // Always flip loading off so RequireAuth never gets stuck.
+        if (mounted) setLoading(false);
+      }
+    })();
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
