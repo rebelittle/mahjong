@@ -22,6 +22,10 @@ export const supabase = createClient<Database>(
   anonKey || "placeholder-anon-key",
   {
     auth: {
+      // PKCE puts the auth code in ?code=… (search params), not in the URL
+      // hash. Critical because we use HashRouter — implicit-flow tokens land
+      // in the hash and collide with the router.
+      flowType: "pkce",
       persistSession: isSupabaseConfigured,
       autoRefreshToken: isSupabaseConfigured,
       detectSessionInUrl: isSupabaseConfigured,
