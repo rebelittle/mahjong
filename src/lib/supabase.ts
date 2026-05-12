@@ -4,21 +4,30 @@ import type { Database } from "./database.types";
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!url || !anonKey) {
-  // Surface this loudly during development; the deployed build sets these via
-  // GitHub Actions secrets so prod should never hit this.
+export const isSupabaseConfigured = Boolean(url && anonKey);
+
+if (!isSupabaseConfigured) {
   console.error(
-    "Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Copy .env.local.example to .env.local and fill in the values from your Supabase project.",
+    "Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. " +
+      "Locally: copy .env.local.example to .env.local. " +
+      "On GitHub Pages: add both as repo secrets in Settings → Secrets and variables → Actions, then re-run the workflow.",
   );
 }
 
-export const supabase = createClient<Database>(url ?? "", anonKey ?? "", {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
+// Use a syntactically-valid placeholder URL when env is missing so createClient
+// doesn't throw at module load. The app gates real usage behind
+// isSupabaseConfigured so this client never actually makes a network call.
+export const supabase = createClient<Database>(
+  url || "https://placeholder.supabase.co",
+  anonKey || "placeholder-anon-key",
+  {
+    auth: {
+      persistSession: isSupabaseConfigured,
+      autoRefreshToken: isSupabaseConfigured,
+      detectSessionInUrl: isSupabaseConfigured,
+    },
   },
-});
+);
 
 // Typed RPC helper. supabase-js v2.105's rpc() generic inference fights us
 // (defaults Args to `never`); this wrapper threads the Database types
