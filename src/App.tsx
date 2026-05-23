@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
-import AuthCallbackPage from "./pages/AuthCallbackPage";
+import SsoCallbackPage from "./pages/SsoCallbackPage";
 import ProfilePage from "./pages/ProfilePage";
 import SessionPage from "./pages/SessionPage";
 import MePage from "./pages/MePage";
@@ -17,7 +17,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/sso-callback" element={<SsoCallbackPage />} />
           <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
           <Route path="/session/:id" element={<SessionPage />} />
           <Route path="/me" element={<RequireAuth><MePage /></RequireAuth>} />

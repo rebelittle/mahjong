@@ -1,5 +1,6 @@
-// Rendered when VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are missing.
-// Better than a blank page: tells the deployer exactly what to fix.
+// Rendered when required env vars are missing (Clerk publishable key, or
+// Supabase URL/anon key). Better than a blank page: tells the deployer
+// exactly what to fix.
 export default function SetupRequiredPage() {
   const isLocal =
     typeof window !== "undefined" &&
@@ -16,13 +17,20 @@ export default function SetupRequiredPage() {
       </div>
       <div className="card overflow-hidden p-7 sm:p-9">
         <p className="pill" style={{ color: "#B8302A" }}>Setup needed</p>
-        <h1 className="mt-3 text-3xl">Fox Hill Mahjong isn't connected to its database yet.</h1>
+        <h1 className="mt-3 text-3xl">Fox Hill Mahjong isn't connected to its auth + database yet.</h1>
         <p className="mt-3 text-fox-ink/75">
-          The frontend is up, but Supabase credentials haven't been wired in. Once these are
-          set the app will load normally.
+          The frontend is up, but Clerk and/or Supabase credentials haven't been wired in.
+          Once these are set the app will load normally.
         </p>
 
-        <h2 className="mt-7 text-lg">Fix it in one of these places:</h2>
+        <h2 className="mt-7 text-lg">Required environment variables:</h2>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-fox-ink/80">
+          <li><code>VITE_CLERK_PUBLISHABLE_KEY</code> — from Clerk dashboard → API keys</li>
+          <li><code>VITE_SUPABASE_URL</code> — from Supabase → Project Settings → API</li>
+          <li><code>VITE_SUPABASE_ANON_KEY</code> — same place</li>
+        </ul>
+
+        <h2 className="mt-7 text-lg">Set them in:</h2>
 
         {isLocal ? (
           <ol className="mt-3 list-decimal space-y-2 pl-5 text-fox-ink/80">
@@ -30,11 +38,7 @@ export default function SetupRequiredPage() {
               Copy <code className="rounded bg-fox-cream-100 px-1.5 py-0.5 text-sm">.env.local.example</code>
               {" "}to <code className="rounded bg-fox-cream-100 px-1.5 py-0.5 text-sm">.env.local</code>.
             </li>
-            <li>
-              Fill in <code className="text-sm">VITE_SUPABASE_URL</code> and{" "}
-              <code className="text-sm">VITE_SUPABASE_ANON_KEY</code> from{" "}
-              <em>Supabase project → Project Settings → API</em>.
-            </li>
+            <li>Fill in the three values above.</li>
             <li>Restart <code className="text-sm">npm run dev</code>.</li>
           </ol>
         ) : (
@@ -42,11 +46,7 @@ export default function SetupRequiredPage() {
             <li>
               GitHub repo → <strong>Settings → Secrets and variables → Actions</strong>.
             </li>
-            <li>
-              Add two repository secrets: <code className="text-sm">VITE_SUPABASE_URL</code> and{" "}
-              <code className="text-sm">VITE_SUPABASE_ANON_KEY</code> (values from{" "}
-              <em>Supabase project → Project Settings → API</em>).
-            </li>
+            <li>Add all three as repository secrets.</li>
             <li>
               <strong>Actions</strong> tab → latest run → <em>Re-run all jobs</em>.
             </li>
@@ -54,7 +54,8 @@ export default function SetupRequiredPage() {
         )}
 
         <p className="mt-7 text-xs text-fox-ink/55">
-          Full instructions in <code className="text-xs">SETUP.md</code> at the repo root.
+          Also required: in Supabase dashboard → Auth → Sign In/Up → Third Party Auth,
+          add Clerk as a provider using the issuer URL from Clerk's Supabase integration.
         </p>
       </div>
     </main>

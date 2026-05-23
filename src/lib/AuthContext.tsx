@@ -1,31 +1,51 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { useUser, useClerk, useSignIn } from "@clerk/clerk-react";
 import { supabase } from "./supabase";
 import type { Profile } from "./database.types";
 
+// Shape preserved (minus signInWithEmail) so downstream consumers
+// (Header, LoginPage, ProfilePage, MePage, SessionPage, HomePage) don't
+// need to change. user/session are narrowed to just the fields the rest
+// of the app actually reads (id, email).
+interface AuthUser {
+  id: string;
+  email: string;
+}
+interface AuthSession {
+  user: AuthUser;
+}
 interface AuthState {
   loading: boolean;
-  session: Session | null;
-  user: User | null;
+  session: AuthSession | null;
+  user: AuthUser | null;
   profile: Profile | null;
-  signInWithEmail: (email: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
 const AuthCtx = createContext<AuthState | null>(null);
 
+interface ClerkApiError {
+  errors?: Array<{ code?: string; message?: string }>;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
+  const { isLoaded: userLoaded, user: clerkUser } = useUser();
+  const { signIn, isLoaded: signInLoaded } = useSignIn();
+  const clerk = useClerk();
+
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  async function loadProfile(userId: string) {
+  const userId = clerkUser?.id ?? null;
+  const email = clerkUser?.primaryEmailAddress?.emailAddress ?? "";
+
+  const loadProfile = useCallback(async (id: string) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", userId)
+        .eq("id", id)
         .maybeSingle();
       if (error) {
         console.error("Profile fetch error:", error.message);
@@ -34,76 +54,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setProfile((data as Profile | null) ?? null);
     } catch (err) {
-      // Network error or similar — don't let it crash AuthContext init.
       console.error("Profile fetch threw:", err);
       setProfile(null);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    let mounted = true;
+    if (!userId) {
+      setProfile(null);
+      return;
+    }
+    void loadProfile(userId);
+  }, [userId, loadProfile]);
 
-    (async () => {
-      try {
-        // Hard cap on getSession so a hung promise can't trap the UI forever.
-        // If it doesn't resolve in 8s, treat as unauthenticated. Real session
-        // restoration happens in localStorage; this just stops the UI hanging.
-        const sessionResult = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise<{ data: { session: Session | null } }>((resolve) =>
-            setTimeout(() => resolve({ data: { session: null } }), 8000),
-          ),
-        ]);
-        if (!mounted) return;
-        setSession(sessionResult.data.session);
-        if (sessionResult.data.session?.user) {
-          await loadProfile(sessionResult.data.session.user.id);
-        }
-      } catch (err) {
-        console.error("Auth init failed:", err);
-      } finally {
-        // Always flip loading off so RequireAuth never gets stuck.
-        if (mounted) setLoading(false);
-      }
-    })();
+  const loading = !userLoaded || !signInLoaded;
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      setSession(newSession);
-      if (newSession?.user) {
-        await loadProfile(newSession.user.id);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
+  const userView: AuthUser | null = clerkUser ? { id: clerkUser.id, email } : null;
+  const session: AuthSession | null = userView ? { user: userView } : null;
 
   const value: AuthState = {
     loading,
     session,
-    user: session?.user ?? null,
+    user: userView,
     profile,
-    async signInWithEmail(email) {
-      // Redirect target must be a plain non-hash URL — Supabase appends `?code=`
-      // and `detectSessionInUrl` in the client picks it up on load. With
-      // HashRouter we then route to /profile or / from inside React.
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
-        },
-      });
-      return { error: error?.message ?? null };
+    async signInWithGoogle() {
+      if (!signIn) return { error: "Auth is still initializing — try again in a moment." };
+
+      // Absolute URLs so Clerk hands them back through the OAuth dance
+      // intact. Hash routes are preserved through Clerk's server-side
+      // redirect — Clerk appends its callback params to the URL as a
+      // query string after the hash path, which the SSO callback page
+      // reads on mount.
+      const base = `${window.location.origin}${import.meta.env.BASE_URL}`;
+      const redirectUrl = `${base}#/sso-callback`;
+      const redirectUrlComplete = `${base}`;
+
+      try {
+        await signIn.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl,
+          redirectUrlComplete,
+        });
+        // The browser navigates away before this resolves; the return is
+        // for type completeness only.
+        return { error: null };
+      } catch (err) {
+        const clerkErr = err as ClerkApiError;
+        return { error: clerkErr.errors?.[0]?.message ?? "Could not start Google sign-in." };
+      }
     },
     async signOut() {
-      await supabase.auth.signOut();
+      await clerk.signOut();
     },
     async refreshProfile() {
-      if (session?.user) await loadProfile(session.user.id);
+      if (userId) await loadProfile(userId);
     },
   };
 

@@ -14,6 +14,27 @@ if (!isSupabaseConfigured) {
   );
 }
 
+// Clerk's ClerkJS attaches itself to window once <ClerkProvider> mounts.
+// Supabase calls our accessToken() before every request; we return Clerk's
+// short-lived JWT, which Supabase validates against the third-party-auth
+// integration configured in the dashboard. Returning null at boot (before
+// Clerk has mounted, or while signed out) is fine — RLS policies that
+// require a sub claim will just refuse.
+interface ClerkWindow {
+  Clerk?: {
+    session?: { getToken: () => Promise<string | null> };
+  };
+}
+async function getClerkToken(): Promise<string | null> {
+  const w = window as unknown as ClerkWindow;
+  try {
+    return (await w.Clerk?.session?.getToken()) ?? null;
+  } catch (err) {
+    console.warn("Clerk getToken failed:", err);
+    return null;
+  }
+}
+
 // Use a syntactically-valid placeholder URL when env is missing so createClient
 // doesn't throw at module load. The app gates real usage behind
 // isSupabaseConfigured so this client never actually makes a network call.
@@ -21,15 +42,7 @@ export const supabase = createClient<Database>(
   url || "https://placeholder.supabase.co",
   anonKey || "placeholder-anon-key",
   {
-    auth: {
-      // PKCE puts the auth code in ?code=… (search params), not in the URL
-      // hash. Critical because we use HashRouter — implicit-flow tokens land
-      // in the hash and collide with the router.
-      flowType: "pkce",
-      persistSession: isSupabaseConfigured,
-      autoRefreshToken: isSupabaseConfigured,
-      detectSessionInUrl: isSupabaseConfigured,
-    },
+    accessToken: getClerkToken,
   },
 );
 
