@@ -8,6 +8,7 @@ import type { Profile, Seat, SeatPosition, SessionRow } from "../lib/database.ty
 import { SESSION_TEMPLATES } from "../data/sessionTemplates";
 
 const POSITIONS: SeatPosition[] = ["east", "south", "west", "north"];
+const TABLE_TILTS: Record<number, number> = { 1: -2, 2: 1.5, 3: -1.5, 4: 2 };
 const WIND_GLYPH: Record<SeatPosition, string> = {
   east: "東",
   south: "南",
@@ -184,32 +185,21 @@ export default function SessionPage() {
         <RoomDecoration />
 
         <div className="relative z-10 grid gap-5 sm:gap-12">
-          <TableRow tables={[1, 2]} bucketed={tables} render={(n) => (
-            <MahjongTable
-              key={n}
-              tableNumber={n}
-              seats={tables[n]}
-              profiles={profiles}
-              currentUserId={user?.id ?? null}
-              onClaim={onClaim}
-              pendingSeatId={pendingSeatId}
-              recentlyClaimedId={recentlyClaimedId}
-              tilt={[-2, 1.5][n - 1] ?? 0}
-            />
-          )} />
-          <TableRow tables={[3, 4]} bucketed={tables} render={(n) => (
-            <MahjongTable
-              key={n}
-              tableNumber={n}
-              seats={tables[n]}
-              profiles={profiles}
-              currentUserId={user?.id ?? null}
-              onClaim={onClaim}
-              pendingSeatId={pendingSeatId}
-              recentlyClaimedId={recentlyClaimedId}
-              tilt={[2, -1.5][n - 3] ?? 0}
-            />
-          )} />
+          {[[1], [2, 3], [4]].map((row, i) => (
+            <TableRow key={i} tables={row} bucketed={tables} render={(n) => (
+              <MahjongTable
+                key={n}
+                tableNumber={n}
+                seats={tables[n]}
+                profiles={profiles}
+                currentUserId={user?.id ?? null}
+                onClaim={onClaim}
+                pendingSeatId={pendingSeatId}
+                recentlyClaimedId={recentlyClaimedId}
+                tilt={TABLE_TILTS[n] ?? 0}
+              />
+            )} />
+          ))}
         </div>
       </div>
 
