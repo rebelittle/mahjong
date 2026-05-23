@@ -1,21 +1,16 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext";
-import { upsertMyProfile, uploadProfilePhoto } from "../lib/dataApi";
-import { resizeImage, initialsOf } from "../lib/utils";
+import { upsertMyProfile } from "../lib/dataApi";
+import { initialsOf } from "../lib/utils";
 import type { SkillLevel } from "../lib/database.types";
 
 export default function ProfilePage() {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const [displayName, setDisplayName] = useState("");
   const [skillLevel, setSkillLevel] = useState<SkillLevel | "">("");
-  const [notes, setNotes] = useState("");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [pendingPhoto, setPendingPhoto] = useState<Blob | null>(null);
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
@@ -23,24 +18,12 @@ export default function ProfilePage() {
     if (profile) {
       setDisplayName(profile.display_name ?? "");
       setSkillLevel(profile.skill_level ?? "");
-      setNotes(profile.notes ?? "");
-      setPhotoUrl(profile.photo_url);
     }
   }, [profile]);
 
   const isNew = !profile;
-
-  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const blob = await resizeImage(file, 800, 0.85);
-      setPendingPhoto(blob);
-      setPhotoPreview(URL.createObjectURL(blob));
-    } catch (err) {
-      setErrMsg(err instanceof Error ? err.message : "Failed to read image.");
-    }
-  }
+  // Photo comes from the user's Google account via Clerk — no uploads.
+  const photoUrl = user?.imageUrl ?? profile?.photo_url ?? null;
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
@@ -52,15 +35,11 @@ export default function ProfilePage() {
     setSaving(true);
     setErrMsg("");
     try {
-      let nextPhotoUrl = photoUrl;
-      if (pendingPhoto) {
-        nextPhotoUrl = await uploadProfilePhoto(user.id, pendingPhoto);
-      }
       await upsertMyProfile(user.id, user.email ?? "", {
         display_name: displayName.trim(),
         skill_level: (skillLevel || null) as SkillLevel | null,
-        notes: notes.trim() || null,
-        photo_url: nextPhotoUrl,
+        notes: null,
+        photo_url: user.imageUrl ?? null,
       });
       await refreshProfile();
       navigate("/");
@@ -88,35 +67,17 @@ export default function ProfilePage() {
         <div className="grid gap-7 p-7 sm:grid-cols-[180px_1fr] sm:p-9">
           <div>
             <span className="label">Photo</span>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="group relative block aspect-square w-full overflow-hidden rounded-2xl border-2 border-dashed border-fox-cream-200 bg-fox-cream-50/50 transition hover:border-fox-yellow-500/60"
-            >
-              {(photoPreview || photoUrl) ? (
-                <img
-                  src={photoPreview || photoUrl!}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
+            <div className="relative block aspect-square w-full overflow-hidden rounded-2xl border border-fox-cream-200 bg-fox-cream-50/50">
+              {photoUrl ? (
+                <img src={photoUrl} alt="" className="h-full w-full object-cover" />
               ) : (
                 <span className="grid h-full place-items-center font-display text-4xl text-fox-yellow-700/40">
-                  {displayName ? initialsOf(displayName) : "+"}
+                  {displayName ? initialsOf(displayName) : "·"}
                 </span>
               )}
-              <span className="absolute inset-x-0 bottom-0 bg-fox-navy-900/0 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-fox-cream-50 opacity-0 transition group-hover:bg-fox-navy-900/70 group-hover:opacity-100">
-                Change
-              </span>
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={onPickFile}
-            />
+            </div>
             <p className="mt-2 text-[11px] text-fox-ink/50">
-              Resized to 800px max before upload.
+              Pulled from your Google account.
             </p>
           </div>
 
@@ -155,17 +116,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="notes" className="label">Anything we should know? <span className="font-normal normal-case tracking-normal text-fox-ink/50">(optional)</span></label>
-              <textarea
-                id="notes"
-                rows={3}
-                placeholder="I bring my own set / kid is Lily / allergic to peanuts"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="input resize-none"
-              />
-            </div>
           </div>
         </div>
 

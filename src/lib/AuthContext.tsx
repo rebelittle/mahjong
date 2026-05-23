@@ -10,6 +10,7 @@ import type { Profile } from "./database.types";
 interface AuthUser {
   id: string;
   email: string;
+  imageUrl: string | null;
 }
 interface AuthSession {
   user: AuthUser;
@@ -69,7 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loading = !userLoaded || !signInLoaded;
 
-  const userView: AuthUser | null = clerkUser ? { id: clerkUser.id, email } : null;
+  const userView: AuthUser | null = clerkUser
+    ? { id: clerkUser.id, email, imageUrl: clerkUser.imageUrl ?? null }
+    : null;
   const session: AuthSession | null = userView ? { user: userView } : null;
 
   const value: AuthState = {

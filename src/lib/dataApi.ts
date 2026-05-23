@@ -118,14 +118,3 @@ export async function upsertMyProfile(userId: string, email: string, input: Prof
   const { error } = await supabase.from("profiles").upsert(payload as any);
   if (error) throw error;
 }
-
-export async function uploadProfilePhoto(userId: string, blob: Blob): Promise<string> {
-  const path = `${userId}/avatar-${Date.now()}.jpg`;
-  const { error } = await supabase.storage.from("profiles").upload(path, blob, {
-    contentType: "image/jpeg",
-    upsert: true,
-  });
-  if (error) throw error;
-  const { data } = supabase.storage.from("profiles").getPublicUrl(path);
-  return data.publicUrl;
-}

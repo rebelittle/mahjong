@@ -10,19 +10,21 @@
 -- then paste the issuer URL from Clerk dashboard → Integrations → Supabase.
 
 ------------------------------------------------------------------------
--- Tear down old schema (test data only — confirmed safe to wipe)
+-- Tear down old schema (test data only — confirmed safe to wipe).
+-- Tables MUST drop before is_admin(): their RLS policies depend on it,
+-- and `drop table cascade` removes the policies (which removes the
+-- dependency) but `drop function` itself errors out otherwise.
 ------------------------------------------------------------------------
-drop trigger if exists generate_seats_after_session_insert on public.sessions;
-drop function if exists public.claim_seat(uuid);
-drop function if exists public.ensure_sessions_materialized(int);
-drop function if exists public.generate_seats_for_session();
-drop function if exists public.is_admin();
-
 drop table if exists public.seats cascade;
 drop table if exists public.sessions cascade;
 drop table if exists public.session_templates cascade;
 drop table if exists public.admins cascade;
 drop table if exists public.profiles cascade;
+
+drop function if exists public.claim_seat(uuid) cascade;
+drop function if exists public.ensure_sessions_materialized(int) cascade;
+drop function if exists public.generate_seats_for_session() cascade;
+drop function if exists public.is_admin() cascade;
 
 ------------------------------------------------------------------------
 -- Profiles: one row per Clerk user. id is the Clerk user ID (text).
@@ -175,42 +177,9 @@ create policy "seats update" on public.seats for update to authenticated
     or public.is_admin()
   );
 
-------------------------------------------------------------------------
--- Storage policies for profile photos (folder name = Clerk user ID)
-------------------------------------------------------------------------
-insert into storage.buckets (id, name, public)
-values ('profiles', 'profiles', true)
-on conflict (id) do nothing;
-
-drop policy if exists "profile photo read"   on storage.objects;
-drop policy if exists "profile photo upload" on storage.objects;
-drop policy if exists "profile photo update" on storage.objects;
-drop policy if exists "profile photo delete" on storage.objects;
-
-create policy "profile photo read" on storage.objects
-  for select to anon, authenticated
-  using (bucket_id = 'profiles');
-
-create policy "profile photo upload" on storage.objects
-  for insert to authenticated
-  with check (
-    bucket_id = 'profiles'
-    and (storage.foldername(name))[1] = (auth.jwt() ->> 'sub')
-  );
-
-create policy "profile photo update" on storage.objects
-  for update to authenticated
-  using (
-    bucket_id = 'profiles'
-    and (storage.foldername(name))[1] = (auth.jwt() ->> 'sub')
-  );
-
-create policy "profile photo delete" on storage.objects
-  for delete to authenticated
-  using (
-    bucket_id = 'profiles'
-    and (storage.foldername(name))[1] = (auth.jwt() ->> 'sub')
-  );
+-- No Supabase Storage policies needed: profile photos come from the user's
+-- Google account via Clerk (clerkUser.imageUrl), stored as a URL in
+-- profiles.photo_url. We don't upload anything.
 
 ------------------------------------------------------------------------
 -- ensure_sessions_materialized(weeks_ahead) — unchanged body, just recreated
