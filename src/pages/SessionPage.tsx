@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext";
 import { supabase } from "../lib/supabase";
-import { claimSeat, fetchSessionWithSeats } from "../lib/dataApi";
+import { claimSeat, fetchSessionWithSeats, releaseMySeat } from "../lib/dataApi";
 import { formatSessionDate, initialsOf } from "../lib/utils";
 import type { Profile, Seat, SeatPosition, SessionRow } from "../lib/database.types";
 import { SESSION_TEMPLATES } from "../data/sessionTemplates";
@@ -127,6 +127,23 @@ export default function SessionPage() {
     }
   }, [user]);
 
+  const [releasing, setReleasing] = useState(false);
+  const onRelease = useCallback(async (seatId: string) => {
+    if (!user) return;
+    setReleasing(true);
+    setErrMsg("");
+    try {
+      await releaseMySeat(seatId, user.id);
+      setSeats((prev) =>
+        prev.map((s) => (s.id === seatId ? { ...s, profile_id: null, reserved_at: null } : s)),
+      );
+    } catch (err) {
+      setErrMsg(err instanceof Error ? err.message : "Couldn't release that seat.");
+    } finally {
+      setReleasing(false);
+    }
+  }, [user]);
+
   if (loading) {
     return <CenteredSpinner />;
   }
@@ -204,7 +221,12 @@ export default function SessionPage() {
       </div>
 
       {/* ───── Your seat status (bottom bar) ───── */}
-      <YourSeatBar mySeat={mySeat} user={user} />
+      <YourSeatBar
+        mySeat={mySeat}
+        user={user}
+        onRelease={onRelease}
+        releasing={releasing}
+      />
     </main>
   );
 }
@@ -475,7 +497,17 @@ function PlusGlyph() {
    Bottom status bar
    ───────────────────────────────────────────────────────────────────────── */
 
-function YourSeatBar({ mySeat, user }: { mySeat: Seat | null; user: { id: string } | null }) {
+function YourSeatBar({
+  mySeat,
+  user,
+  onRelease,
+  releasing,
+}: {
+  mySeat: Seat | null;
+  user: { id: string } | null;
+  onRelease: (seatId: string) => void;
+  releasing: boolean;
+}) {
   if (!user) {
     return (
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-fox-cream-200 bg-fox-cream-50/95 backdrop-blur">
@@ -500,6 +532,12 @@ function YourSeatBar({ mySeat, user }: { mySeat: Seat | null; user: { id: string
     );
   }
 
+  function handleRelease() {
+    if (!mySeat || releasing) return;
+    const ok = window.confirm("Release your seat? Someone else can grab it once you do.");
+    if (ok) onRelease(mySeat.id);
+  }
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-fox-yellow-500/40 bg-fox-yellow-500/10 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -510,7 +548,17 @@ function YourSeatBar({ mySeat, user }: { mySeat: Seat | null; user: { id: string
             <span className="font-semibold text-fox-navy-700">{POSITION_LABEL[mySeat.seat_position]}</span> seat ({WIND_GLYPH[mySeat.seat_position]}).
           </span>
         </p>
-        <span className="text-xs text-fox-ink/55">Click another chair to switch · Message Mrs. Little to cancel</span>
+        <div className="flex items-center gap-3">
+          <span className="hidden text-xs text-fox-ink/55 sm:inline">Click another chair to switch.</span>
+          <button
+            type="button"
+            onClick={handleRelease}
+            disabled={releasing}
+            className="rounded-full border border-tile-red/40 bg-white px-3.5 py-1.5 text-sm font-medium text-tile-red transition hover:bg-tile-red/5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {releasing ? "Releasing…" : "Leave seat"}
+          </button>
+        </div>
       </div>
     </div>
   );

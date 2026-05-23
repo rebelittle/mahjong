@@ -73,6 +73,23 @@ export async function claimSeat(seatId: string): Promise<Seat> {
   return await rpc("claim_seat", { p_seat_id: seatId });
 }
 
+// Release a seat the caller currently holds. The .eq("profile_id", userId)
+// filter is a belt-and-suspenders safety against a stale UI calling this
+// for someone else's seat — the RLS policy independently enforces that
+// only the seat's holder (or an admin) can null the profile_id.
+export async function releaseMySeat(seatId: string, userId: string): Promise<void> {
+  // supabase-js v2's update() Update-type inference resolves to `never`
+  // when the Database generic is supplied. Cast the table handle so the
+  // payload type widens; the runtime call is unchanged.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const seatsTable = supabase.from("seats") as any;
+  const { error } = await seatsTable
+    .update({ profile_id: null, reserved_at: null })
+    .eq("id", seatId)
+    .eq("profile_id", userId);
+  if (error) throw error;
+}
+
 // Fetch all sessions where the current user holds a seat.
 export async function fetchMyReservations(userId: string): Promise<
   Array<{ session: SessionRow; seat: Seat }>
