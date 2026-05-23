@@ -8,9 +8,19 @@ import { AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 // The visible UI is just a spinner — most users never even see it because
 // the verification finishes in a few hundred ms.
 export default function SsoCallbackPage() {
+  // Explicit fallback URLs are required on GitHub Pages — the app lives at
+  // `/majong/`, not the origin root. Without these, Clerk falls back to
+  // navigating to `/` (the portfolio site) when redirectUrlComplete
+  // can't be honored.
+  const base = import.meta.env.BASE_URL;
   return (
     <>
-      <AuthenticateWithRedirectCallback />
+      <AuthenticateWithRedirectCallback
+        signInFallbackRedirectUrl={base}
+        signUpFallbackRedirectUrl={base}
+        signInForceRedirectUrl={base}
+        signUpForceRedirectUrl={base}
+      />
       <main className="grid min-h-[60vh] place-items-center px-6">
         <div className="text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-fox-yellow-500/30 border-t-fox-yellow-500" />

@@ -183,7 +183,7 @@ export default function SessionPage() {
       <div className="relative">
         <RoomDecoration />
 
-        <div className="relative z-10 grid gap-10 sm:gap-12">
+        <div className="relative z-10 grid gap-5 sm:gap-12">
           <TableRow tables={[1, 2]} bucketed={tables} render={(n) => (
             <MahjongTable
               key={n}
@@ -236,7 +236,7 @@ function TableRow({
   const valid = tables.filter((n) => bucketed[n]);
   return (
     <div
-      className="grid justify-items-center gap-10 sm:gap-14"
+      className="grid justify-items-center gap-5 sm:gap-14"
       style={{ gridTemplateColumns: `repeat(${valid.length}, minmax(0, 1fr))` }}
     >
       {valid.map((n) => render(n))}
@@ -287,13 +287,13 @@ function MahjongTable({
 
   return (
     <div
-      className="relative w-[260px] sm:w-[290px]"
+      className="relative w-[130px] sm:w-[290px]"
       style={{ transform: `rotate(${tilt}deg)` }}
     >
       {/* Subtle drop shadow on the floor under the table */}
       <div
         aria-hidden
-        className="absolute left-1/2 top-1/2 h-[220px] w-[220px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-2xl sm:h-[260px] sm:w-[260px]"
+        className="absolute left-1/2 top-1/2 h-[110px] w-[110px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-2xl sm:h-[260px] sm:w-[260px]"
         style={{ background: "radial-gradient(circle, #2C2A26 0%, transparent 70%)" }}
       />
 
@@ -415,7 +415,7 @@ function Chair({
       aria-label={label}
       title={profile ? profile.display_name : `Sit at the ${POSITION_LABEL[position]} seat`}
       className={[
-        "group absolute h-16 w-16 sm:h-[72px] sm:w-[72px] rounded-full transition-all duration-300",
+        "group absolute h-8 w-8 sm:h-[72px] sm:w-[72px] rounded-full transition-all duration-300",
         "outline-none focus-visible:ring-2 focus-visible:ring-fox-yellow-500 focus-visible:ring-offset-2",
         isPending ? "opacity-50" : "",
         isMine ? "z-20 scale-[1.06]" : "z-10 hover:scale-[1.04]",
@@ -448,7 +448,7 @@ function Chair({
         ) : profile?.photo_url ? (
           <img src={profile.photo_url} alt="" className="h-full w-full object-cover" />
         ) : (
-          <span className="font-display text-base font-bold text-fox-navy-700">
+          <span className="font-display text-[10px] font-bold text-fox-navy-700 sm:text-base">
             {profile ? initialsOf(profile.display_name) : ""}
           </span>
         )}
@@ -456,7 +456,7 @@ function Chair({
       {/* Wind glyph badge at the seat */}
       <span
         aria-hidden
-        className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-fox-cream-50 text-[10px] font-bold text-fox-navy-700 shadow-sm ring-1 ring-fox-cream-200"
+        className="absolute -bottom-1 -right-1 grid h-2.5 w-2.5 place-items-center rounded-full bg-fox-cream-50 text-[7px] font-bold text-fox-navy-700 shadow-sm ring-1 ring-fox-cream-200 sm:h-5 sm:w-5 sm:text-[10px]"
       >
         {WIND_GLYPH[position]}
       </span>
@@ -464,7 +464,7 @@ function Chair({
         <span
           aria-hidden
           title="Helper / instructor"
-          className="absolute -top-1 -left-1 grid h-5 w-5 place-items-center rounded-full bg-fox-yellow-500 text-[10px] font-bold text-fox-navy-900 shadow-sm"
+          className="absolute -top-1 -left-1 grid h-2.5 w-2.5 place-items-center rounded-full bg-fox-yellow-500 text-[7px] font-bold text-fox-navy-900 shadow-sm sm:h-5 sm:w-5 sm:text-[10px]"
         >
           ★
         </span>
@@ -475,7 +475,7 @@ function Chair({
 
 function PlusGlyph() {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden>
+    <svg viewBox="0 0 24 24" className="h-[11px] w-[11px] sm:h-[22px] sm:w-[22px]" aria-hidden>
       <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
