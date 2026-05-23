@@ -74,7 +74,7 @@ export default function HomePage() {
 
       <div id="sessions" className="mb-4 flex items-baseline justify-between">
         <h2 className="text-2xl">This week's sessions</h2>
-        <span className="text-xs uppercase tracking-widest text-fox-ink/50">5 tables · 20 seats</span>
+        <span className="text-xs uppercase tracking-widest text-fox-ink/50">4 tables · 16 seats</span>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -140,7 +140,7 @@ function SessionCard({
       <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
         <span className="text-sm text-fox-ink/70">
           <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
-          <span className="text-fox-ink/50"> / 20 seats</span>
+          <span className="text-fox-ink/50"> / 16 seats</span>
         </span>
         {cta}
       </div>

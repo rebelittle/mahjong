@@ -144,8 +144,8 @@ export default function SessionPage() {
   const d = formatSessionDate(session.starts_at);
   const end = formatSessionDate(session.ends_at);
 
-  // Bucket seats by table_number → 1..5
-  const tables: Record<number, Seat[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+  // Bucket seats by table_number → 1..4
+  const tables: Record<number, Seat[]> = { 1: [], 2: [], 3: [], 4: [] };
   for (const s of seats) {
     if (tables[s.table_number]) tables[s.table_number].push(s);
   }
@@ -167,7 +167,7 @@ export default function SessionPage() {
           </div>
           <div className="text-left sm:text-right">
             <div className="font-display text-4xl text-fox-navy-700">
-              {takenCount}<span className="text-fox-ink/30">/20</span>
+              {takenCount}<span className="text-fox-ink/30">/16</span>
             </div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-fox-ink/55">seats taken</p>
           </div>
@@ -184,7 +184,7 @@ export default function SessionPage() {
         <RoomDecoration />
 
         <div className="relative z-10 grid gap-10 sm:gap-12">
-          <TableRow tables={[1, 2, 3]} bucketed={tables} render={(n) => (
+          <TableRow tables={[1, 2]} bucketed={tables} render={(n) => (
             <MahjongTable
               key={n}
               tableNumber={n}
@@ -194,10 +194,10 @@ export default function SessionPage() {
               onClaim={onClaim}
               pendingSeatId={pendingSeatId}
               recentlyClaimedId={recentlyClaimedId}
-              tilt={[-2, 1.5, -1][n - 1] ?? 0}
+              tilt={[-2, 1.5][n - 1] ?? 0}
             />
           )} />
-          <TableRow tables={[4, 5]} bucketed={tables} render={(n) => (
+          <TableRow tables={[3, 4]} bucketed={tables} render={(n) => (
             <MahjongTable
               key={n}
               tableNumber={n}
@@ -207,7 +207,7 @@ export default function SessionPage() {
               onClaim={onClaim}
               pendingSeatId={pendingSeatId}
               recentlyClaimedId={recentlyClaimedId}
-              tilt={[2, -1.5][n - 4] ?? 0}
+              tilt={[2, -1.5][n - 3] ?? 0}
             />
           )} />
         </div>

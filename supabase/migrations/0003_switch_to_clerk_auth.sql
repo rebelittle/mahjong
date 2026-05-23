@@ -100,12 +100,12 @@ create table public.sessions (
 create index sessions_starts_at_idx on public.sessions (starts_at);
 
 ------------------------------------------------------------------------
--- Seats: 5 tables × 4 positions per session. profile_id is Clerk user ID.
+-- Seats: 4 tables × 4 positions per session. profile_id is Clerk user ID.
 ------------------------------------------------------------------------
 create table public.seats (
   id             uuid primary key default gen_random_uuid(),
   session_id     uuid not null references public.sessions(id) on delete cascade,
-  table_number   int  not null check (table_number between 1 and 5),
+  table_number   int  not null check (table_number between 1 and 4),
   seat_position  text not null check (seat_position in ('east', 'south', 'west', 'north')),
   profile_id     text references public.profiles(id) on delete set null,
   reserved_at    timestamptz,
@@ -124,7 +124,7 @@ declare
   positions text[] := array['east', 'south', 'west', 'north'];
   p text;
 begin
-  for t in 1..5 loop
+  for t in 1..4 loop
     foreach p in array positions loop
       insert into public.seats (session_id, table_number, seat_position)
       values (new.id, t, p);
