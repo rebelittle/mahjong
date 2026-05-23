@@ -93,7 +93,7 @@ export default function HomePage() {
 
       <p className="mt-12 text-center text-sm text-fox-ink/55">
         Questions? Talk to Mrs. Little at drop-off, or email
-        {" "}<span className="font-medium text-fox-navy-700">reaganlittle05@gmail.com</span>.
+        {" "}<span className="font-medium text-fox-navy-700">mlittle@foxhill-school.com</span>.
       </p>
     </main>
   );
