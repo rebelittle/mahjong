@@ -64,7 +64,6 @@ export default function HomePage() {
               ) : (
                 <Link to="/login" className="btn-primary">Sign in to reserve</Link>
               )}
-              <a href="#sessions" className="btn-ghost">See the sessions</a>
             </div>
           </div>
 
@@ -115,14 +114,6 @@ function SessionCard({
       })()
     : `${template.dayLabel} · ${template.timeLabel}`;
 
-  const cta = session ? (
-    <Link to={`/session/${session.id}`} className="btn-primary">Pick a seat</Link>
-  ) : (
-    <button className="btn-primary" disabled title="No upcoming session">
-      Coming soon
-    </button>
-  );
-
   return (
     <article className="group card relative flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fox-yellow-500/60 via-fox-yellow-300/50 to-fox-yellow-500/60 opacity-0 transition group-hover:opacity-100" />
@@ -137,13 +128,15 @@ function SessionCard({
         <p className="mb-2 text-sm font-medium text-fox-navy-700">{dateLabel}</p>
         <p className="text-sm text-fox-ink/75">{template.description}</p>
       </div>
-      <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
-        <span className="text-sm text-fox-ink/70">
-          <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
-          <span className="text-fox-ink/50"> / 16 seats</span>
-        </span>
-        {cta}
-      </div>
+      {session && (
+        <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
+          <span className="text-sm text-fox-ink/70">
+            <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
+            <span className="text-fox-ink/50"> / 16 seats</span>
+          </span>
+          <Link to={`/session/${session.id}`} className="btn-primary">Pick a seat</Link>
+        </div>
+      )}
     </article>
   );
 }
