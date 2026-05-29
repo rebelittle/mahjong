@@ -22,7 +22,7 @@ A small web app to manage weekly summer Mahjong sessions at **Fox Hill School**.
 | Admin email (seed) | `reaganlittle05@gmail.com` |
 | Cancellation | No self-cancel — players message admin |
 | Session times | Tue 10a Mommy / Wed 1p Beginner / Thu 10a Experienced (seeded, admin can edit) |
-| Domain | None — use default `[username].github.io/majong/` |
+| Domain | None — use default `[username].github.io/mahjong/` |
 | Visual theme | Real mahjong tile imagery in the background; color palette references foxhill-school.com (warm yellow/gold primary, navy accents, cream/white backgrounds, dark charcoal text) |
 
 ---

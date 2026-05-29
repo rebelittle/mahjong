@@ -12,7 +12,7 @@ cp .env.local.example .env.local   # then fill in your Supabase keys
 npm run dev
 ```
 
-The dev server runs at `http://localhost:5173/majong/` (the `/majong/` base path matches the GitHub Pages deployment).
+The dev server runs at `http://localhost:5173/mahjong/` (the `/mahjong/` base path matches the GitHub Pages deployment).
 
 ## Deployment
 

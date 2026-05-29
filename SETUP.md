@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Visit `http://localhost:5173/majong/`. You should see the Fox Hill Mahjong landing page with the three session cards. The "Pick a seat" buttons are disabled — that's expected until the backend is wired up.
+Visit `http://localhost:5173/mahjong/`. You should see the Fox Hill Mahjong landing page with the three session cards. The "Pick a seat" buttons are disabled — that's expected until the backend is wired up.
 
 ---
 
@@ -25,12 +25,12 @@ Visit `http://localhost:5173/majong/`. You should see the Fox Hill Mahjong landi
    git add .
    git commit -m "Initial scaffold"
    git branch -M main
-   git remote add origin https://github.com/<your-username>/majong.git
+   git remote add origin https://github.com/<your-username>/mahjong.git
    git push -u origin main
    ```
 3. In the repo, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
 4. The first push triggered the deploy workflow. Check the **Actions** tab — when the green check appears, your site is live at:
-   `https://<your-username>.github.io/majong/`
+   `https://<your-username>.github.io/mahjong/`
 
 At this point the build will succeed without Supabase secrets, but the app won't be able to talk to a backend until step 3 below.
 
@@ -87,6 +87,6 @@ See `PLAN.md § 13 Build Order` for the full sequence.
 
 ## Common issues
 
-- **`npm run dev` shows a blank page at `/` but works at `/majong/`** — that's the GitHub Pages base path. The `/majong/` URL is correct.
+- **`npm run dev` shows a blank page at `/` but works at `/mahjong/`** — that's the GitHub Pages base path. The `/mahjong/` URL is correct.
 - **GitHub Actions deploy fails on first run** — check that **Settings → Pages → Source** is set to "GitHub Actions", not "Deploy from a branch".
 - **Magic link emails go to spam** — that's a Supabase free-tier characteristic. For production you'd configure a custom SMTP provider, but for a small community it's fine to tell people to check spam the first time.

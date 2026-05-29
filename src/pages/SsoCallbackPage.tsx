@@ -9,7 +9,7 @@ import { AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 // the verification finishes in a few hundred ms.
 export default function SsoCallbackPage() {
   // Explicit fallback URLs are required on GitHub Pages — the app lives at
-  // `/majong/`, not the origin root. Without these, Clerk falls back to
+  // `/mahjong/`, not the origin root. Without these, Clerk falls back to
   // navigating to `/` (the portfolio site) when redirectUrlComplete
   // can't be honored.
   const base = import.meta.env.BASE_URL;
