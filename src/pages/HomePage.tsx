@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { SESSION_TEMPLATES, type SessionTemplate } from "../data/sessionTemplates";
+import { SESSION_AMENITIES, SESSION_TEMPLATES, type SessionTemplate } from "../data/sessionTemplates";
 import { ensureSessionsMaterialized, fetchUpcomingByType } from "../lib/dataApi";
 import type { SessionRow, SessionType } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
@@ -50,9 +50,9 @@ export default function HomePage() {
               <br className="hidden sm:block" /> right at school.
             </h1>
             <p className="mt-5 max-w-xl text-fox-ink/75">
-              Three friendly weekly sessions all summer long. Pick the one you want, grab
-              your seat, and see who's joining you at the table. An advanced player
-              floats around every game to help when you need it.
+              Friendly weekly sessions all summer long for players who already know the
+              rules. Pick the evening you want, grab your seat, and see who's joining you
+              at the table. A helper floats around every game if a question comes up.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               {user ? (
@@ -89,6 +89,26 @@ export default function HomePage() {
           );
         })}
       </div>
+
+      <section className="card mt-12 overflow-hidden">
+        <div className="grid gap-5 p-7 sm:grid-cols-[auto_1fr] sm:items-center sm:p-8">
+          <div className="text-center sm:text-left">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fox-yellow-700">
+              Good to know
+            </p>
+            <p className="mt-2 font-display text-3xl text-fox-navy-700">$40</p>
+            <p className="text-sm text-fox-ink/60">per 2-hour session</p>
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {SESSION_AMENITIES.map((item) => (
+              <li key={item} className="flex items-start gap-2 text-sm text-fox-ink/80">
+                <span aria-hidden className="mt-0.5 text-fox-yellow-600">✓</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       <p className="mt-12 text-center text-sm text-fox-ink/55">
         Questions? Talk to Mrs. Little at drop-off, or email

@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { claimSeat, fetchSessionWithSeats, releaseMySeat } from "../lib/dataApi";
 import { formatSessionDate, initialsOf } from "../lib/utils";
 import type { Profile, Seat, SeatPosition, SessionRow } from "../lib/database.types";
-import { SESSION_TEMPLATES } from "../data/sessionTemplates";
+import { SESSION_AMENITIES, SESSION_TEMPLATES } from "../data/sessionTemplates";
 
 const POSITIONS: SeatPosition[] = ["east", "south", "west", "north"];
 const TABLE_TILTS: Record<number, number> = { 1: -2, 2: 1.5, 3: -1.5, 4: 2 };
@@ -168,6 +168,23 @@ export default function SessionPage() {
     if (tables[s.table_number]) tables[s.table_number].push(s);
   }
 
+  // Progressive table reveal: start with 2 tables. Open table 3 only once
+  // tables 1–2 are completely full (8 seats), and table 4 only once tables
+  // 1–3 are full (12 seats). This nudges people toward completing a foursome
+  // at an existing table instead of scattering across empty ones.
+  const isTableFull = (n: number) =>
+    tables[n]?.length > 0 && tables[n].every((s) => s.profile_id);
+  const tableHasAnyone = (n: number) => (tables[n] ?? []).some((s) => s.profile_id);
+  const visibleTables = new Set<number>([1, 2]);
+  // Table 3 unlocks when 1 & 2 are full; table 4 when 1, 2 & 3 are full.
+  if (isTableFull(1) && isTableFull(2)) visibleTables.add(3);
+  if (visibleTables.has(3) && isTableFull(3)) visibleTables.add(4);
+  // Never hide a table that already seats someone (e.g. claimed before reveal).
+  for (let n = 3; n <= 4; n++) if (tableHasAnyone(n)) visibleTables.add(n);
+
+  const visibleCapacity = visibleTables.size * 4;
+  const allTablesOpen = visibleTables.size === 4;
+
   return (
     <main className="mx-auto max-w-6xl px-3 pb-32 pt-8 sm:px-6">
       {/* ───── Header ───── */}
@@ -185,7 +202,7 @@ export default function SessionPage() {
           </div>
           <div className="text-left sm:text-right">
             <div className="font-display text-4xl text-fox-navy-700">
-              {takenCount}<span className="text-fox-ink/30">/16</span>
+              {takenCount}<span className="text-fox-ink/30">/{visibleCapacity}</span>
             </div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-fox-ink/55">seats taken</p>
           </div>
@@ -202,23 +219,54 @@ export default function SessionPage() {
         <RoomDecoration />
 
         <div className="relative z-10 grid gap-5 sm:gap-12">
-          {[[1], [2, 3], [4]].map((row, i) => (
-            <TableRow key={i} tables={row} bucketed={tables} render={(n) => (
-              <MahjongTable
-                key={n}
-                tableNumber={n}
-                seats={tables[n]}
-                profiles={profiles}
-                currentUserId={user?.id ?? null}
-                onClaim={onClaim}
-                pendingSeatId={pendingSeatId}
-                recentlyClaimedId={recentlyClaimedId}
-                tilt={TABLE_TILTS[n] ?? 0}
-              />
-            )} />
-          ))}
+          {[[1], [2, 3], [4]].map((row, i) => {
+            const shown = row.filter((n) => visibleTables.has(n));
+            if (shown.length === 0) return null;
+            return (
+              <TableRow key={i} tables={shown} bucketed={tables} render={(n) => (
+                <MahjongTable
+                  key={n}
+                  tableNumber={n}
+                  seats={tables[n]}
+                  profiles={profiles}
+                  currentUserId={user?.id ?? null}
+                  onClaim={onClaim}
+                  pendingSeatId={pendingSeatId}
+                  recentlyClaimedId={recentlyClaimedId}
+                  tilt={TABLE_TILTS[n] ?? 0}
+                />
+              )} />
+            );
+          })}
         </div>
+
+        {!allTablesOpen && (
+          <p className="relative z-10 mt-6 text-center text-xs text-fox-ink/55">
+            Another table opens up once these are full — keep foursomes together
+            by filling a table before starting a new one.
+          </p>
+        )}
       </div>
+
+      {/* ───── Price & what's provided (at the end) ───── */}
+      <section className="card mt-10 overflow-hidden">
+        <div className="grid gap-5 p-6 sm:grid-cols-[auto_1fr] sm:items-center sm:p-7">
+          <div className="text-center sm:text-left">
+            <p className="font-display text-3xl text-fox-navy-700">
+              {presentation.priceLabel ?? "$40 · 2 hours"}
+            </p>
+            <p className="text-xs uppercase tracking-[0.22em] text-fox-ink/55">per session</p>
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {SESSION_AMENITIES.map((item) => (
+              <li key={item} className="flex items-start gap-2 text-sm text-fox-ink/80">
+                <span aria-hidden className="mt-0.5 text-fox-yellow-600">✓</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       {/* ───── Your seat status (bottom bar) ───── */}
       <YourSeatBar
