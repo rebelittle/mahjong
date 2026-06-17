@@ -9,6 +9,13 @@ import { SESSION_AMENITIES, SESSION_TEMPLATES } from "../data/sessionTemplates";
 
 const POSITIONS: SeatPosition[] = ["east", "south", "west", "north"];
 const TABLE_TILTS: Record<number, number> = { 1: -2, 2: 1.5, 3: -1.5, 4: 2 };
+// Felt "play mat" colour per table: 1 red · 2 white · 3 pink · 4 blue.
+const TABLE_MATS: Record<number, { base: string; edge: string }> = {
+  1: { base: "#C23A33", edge: "#9E2A24" }, // red
+  2: { base: "#FBF7EF", edge: "#E3DAC8" }, // white
+  3: { base: "#EBA6BC", edge: "#D5859F" }, // pink
+  4: { base: "#2F6BB0", edge: "#1F5BA8" }, // blue
+};
 const WIND_GLYPH: Record<SeatPosition, string> = {
   east: "東",
   south: "南",
@@ -183,7 +190,6 @@ export default function SessionPage() {
   for (let n = 3; n <= 4; n++) if (tableHasAnyone(n)) visibleTables.add(n);
 
   const visibleCapacity = visibleTables.size * 4;
-  const allTablesOpen = visibleTables.size === 4;
 
   return (
     <main className="mx-auto max-w-6xl px-3 pb-32 pt-8 sm:px-6">
@@ -218,7 +224,7 @@ export default function SessionPage() {
       <div className="relative">
         <RoomDecoration />
 
-        <div className="relative z-10 grid gap-5 sm:gap-12">
+        <div className="relative z-10 grid gap-8 sm:gap-16">
           {[[1], [2, 3], [4]].map((row, i) => {
             const shown = row.filter((n) => visibleTables.has(n));
             if (shown.length === 0) return null;
@@ -239,13 +245,6 @@ export default function SessionPage() {
             );
           })}
         </div>
-
-        {!allTablesOpen && (
-          <p className="relative z-10 mt-6 text-center text-xs text-fox-ink/55">
-            Another table opens up once these are full — keep foursomes together
-            by filling a table before starting a new one.
-          </p>
-        )}
       </div>
 
       {/* ───── Price & what's provided (at the end) ───── */}
@@ -296,7 +295,7 @@ function TableRow({
   const valid = tables.filter((n) => bucketed[n]);
   return (
     <div
-      className="grid justify-items-center gap-5 sm:gap-14"
+      className="grid justify-items-center gap-8 sm:gap-20"
       style={{ gridTemplateColumns: `repeat(${valid.length}, minmax(0, 1fr))` }}
     >
       {valid.map((n) => render(n))}
@@ -399,6 +398,10 @@ function TableTopSvg({ tableNumber }: { tableNumber: number }) {
           <stop offset="0%" stopColor="#FFF7DE" stopOpacity="0.7" />
           <stop offset="100%" stopColor="#E8D9A6" stopOpacity="0" />
         </radialGradient>
+        <radialGradient id={`matSheen-${tableNumber}`} cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+        </radialGradient>
         <pattern id={`weave-${tableNumber}`} width="4" height="4" patternUnits="userSpaceOnUse">
           <path d="M0 0h4M0 2h4" stroke="#C6B17A" strokeWidth="0.3" opacity="0.25" />
         </pattern>
@@ -411,6 +414,14 @@ function TableTopSvg({ tableNumber }: { tableNumber: number }) {
       <rect x="14" y="14" width="232" height="232" rx="12" fill={`url(#felt-${tableNumber})`} />
       <rect x="14" y="14" width="232" height="232" rx="12" fill={`url(#weave-${tableNumber})`} />
       <rect x="14" y="14" width="232" height="232" rx="12" fill={`url(#feltInner-${tableNumber})`} />
+      {/* Coloured play mat resting on the felt */}
+      <rect
+        x="52" y="52" width="156" height="156" rx="14"
+        fill={(TABLE_MATS[tableNumber] ?? TABLE_MATS[1]).base}
+        stroke={(TABLE_MATS[tableNumber] ?? TABLE_MATS[1]).edge} strokeWidth="2"
+      />
+      <rect x="52" y="52" width="156" height="156" rx="14" fill={`url(#matSheen-${tableNumber})`} />
+
       {/* Inner stitch line */}
       <rect
         x="24" y="24" width="212" height="212" rx="8"

@@ -140,7 +140,7 @@ function SessionCard({
       <div className="flex items-start gap-3 border-b border-fox-cream-200 p-5">
         <CardTile glyph={template.glyph} color={template.glyphColor} />
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-lg">{template.title}</h3>
+          <h3 className="truncate text-[0.84rem]">{template.title}</h3>
           <p className="text-sm text-fox-ink/70">{template.tagline}</p>
         </div>
       </div>
