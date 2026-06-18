@@ -152,7 +152,7 @@ function SessionCard({
         <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
           <span className="text-sm text-fox-ink/70">
             <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
-            <span className="text-fox-ink/50"> / 16 seats</span>
+            <span className="text-fox-ink/50"> / {seatsTaken >= 12 ? 16 : seatsTaken >= 8 ? 12 : 8} seats</span>
           </span>
           <Link to={`/session/${session.id}`} className="btn-primary">Pick a seat</Link>
         </div>
