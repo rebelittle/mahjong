@@ -16,6 +16,7 @@ const TABLE_MATS: Record<number, { base: string; edge: string }> = {
   3: { base: "#EBA6BC", edge: "#D5859F" }, // pink
   4: { base: "#2F6BB0", edge: "#1F5BA8" }, // blue
 };
+const TABLE_NAMES: Record<number, string> = { 1: "Red", 2: "White", 3: "Pink", 4: "Blue" };
 const WIND_GLYPH: Record<SeatPosition, string> = {
   east: "東",
   south: "南",
@@ -434,12 +435,12 @@ function TableTopSvg({ tableNumber }: { tableNumber: number }) {
       <text x="130" y="232" textAnchor="middle" fontFamily="serif" fontSize="22" fontWeight="700" fill="#13294A" opacity="0.65">南</text>
       <text x="34"  y="138" textAnchor="middle" fontFamily="serif" fontSize="22" fontWeight="700" fill="#13294A" opacity="0.65">西</text>
 
-      {/* Center: a small "table N" placard */}
+      {/* Center: table name placard (Red, White, Pink, Blue) */}
       <g transform="translate(95 105)">
         <rect x="0" y="0" width="70" height="50" rx="6" fill="#FBF3DA" stroke="#A6916A" strokeWidth="0.8" />
         <rect x="3" y="3" width="64" height="44" rx="4" fill="none" stroke="#D9C696" strokeWidth="0.5" />
-        <text x="35" y="22" textAnchor="middle" fontFamily="serif" fontSize="9" fontWeight="700" letterSpacing="2" fill="#13294A" opacity="0.55">TABLE</text>
-        <text x="35" y="40" textAnchor="middle" fontFamily="serif" fontSize="20" fontWeight="700" fill="#B8302A">{tableNumber}</text>
+        <text x="35" y="28" textAnchor="middle" fontFamily="serif" fontSize="9" fontWeight="700" letterSpacing="2" fill="#13294A" opacity="0.55">TABLE</text>
+        <text x="35" y="46" textAnchor="middle" fontFamily="serif" fontSize="14" fontWeight="700" fill="#B8302A">{TABLE_NAMES[tableNumber] ?? tableNumber}</text>
       </g>
     </svg>
   );
@@ -603,7 +604,7 @@ function YourSeatBar({
         <p className="text-sm">
           <span className="font-display text-lg text-fox-navy-700">You're in.</span>{" "}
           <span className="text-fox-ink/75">
-            Table <span className="font-semibold text-fox-navy-700">{mySeat.table_number}</span>,{" "}
+            <span className="font-semibold text-fox-navy-700">{TABLE_NAMES[mySeat.table_number] ?? mySeat.table_number}</span> table,{" "}
             <span className="font-semibold text-fox-navy-700">{POSITION_LABEL[mySeat.seat_position]}</span> seat ({WIND_GLYPH[mySeat.seat_position]}).
           </span>
         </p>

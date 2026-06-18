@@ -73,7 +73,7 @@ export default function HomePage() {
 
       <div id="sessions" className="mb-4 flex items-baseline justify-between">
         <h2 className="text-2xl">This week's sessions</h2>
-        <span className="text-xs uppercase tracking-widest text-fox-ink/50">4 tables · 16 seats</span>
+
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

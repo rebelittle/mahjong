@@ -12,6 +12,7 @@ const POSITION_LABEL: Record<string, string> = {
   west: "West",
   north: "North",
 };
+const TABLE_NAMES: Record<number, string> = { 1: "Red", 2: "White", 3: "Pink", 4: "Blue" };
 const WIND_GLYPH: Record<string, string> = {
   east: "東",
   south: "南",
@@ -112,7 +113,7 @@ function ReservationRow({ session, seat }: { session: SessionRow; seat: Seat }) 
         <div className="hidden text-right sm:block">
           <p className="text-xs uppercase tracking-widest text-fox-ink/50">Seat</p>
           <p className="font-display text-lg text-fox-navy-700">
-            Table {seat.table_number} · {WIND_GLYPH[seat.seat_position]}
+            <span className="font-semibold">{TABLE_NAMES[seat.table_number] ?? seat.table_number}</span> table · {WIND_GLYPH[seat.seat_position]}
             <span className="ml-1 text-sm font-normal text-fox-ink/60">
               ({POSITION_LABEL[seat.seat_position]})
             </span>
