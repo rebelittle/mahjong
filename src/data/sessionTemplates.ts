@@ -21,7 +21,7 @@ export interface SessionTemplate {
 
 export const SESSION_AMENITIES: string[] = [
   "Snacks and drinks provided",
-  "Building is well air conditioned",
+  "Building is air conditioned",
   "Full sets and 2026 cards provided",
   "All you need to bring is yourself!",
 ];
