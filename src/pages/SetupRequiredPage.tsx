@@ -13,11 +13,11 @@ export default function SetupRequiredPage() {
           <rect x="1" y="1" width="38" height="54" rx="6" fill="#FBF3DA" stroke="#13294A" strokeWidth="1.5" />
           <text x="20" y="36" textAnchor="middle" fontFamily="serif" fontSize="22" fontWeight="700" fill="#B8302A">萬</text>
         </svg>
-        <div className="font-display text-xl text-fox-navy-700">Fox Hill Mahjong</div>
+        <div className="font-display text-xl text-fox-navy-700">Fox Hill Mah Jongg</div>
       </div>
       <div className="card overflow-hidden p-7 sm:p-9">
         <p className="pill" style={{ color: "#B8302A" }}>Setup needed</p>
-        <h1 className="mt-3 text-3xl">Fox Hill Mahjong isn't connected to its auth + database yet.</h1>
+        <h1 className="mt-3 text-3xl">Fox Hill Mah Jongg isn't connected to its auth + database yet.</h1>
         <p className="mt-3 text-fox-ink/75">
           The frontend is up, but Clerk and/or Supabase credentials haven't been wired in.
           Once these are set the app will load normally.
