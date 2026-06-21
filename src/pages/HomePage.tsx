@@ -21,7 +21,7 @@ export default function HomePage() {
     if (authLoading) return;
     let alive = true;
     (async () => {
-      await ensureSessionsMaterialized(20, PROGRAMME_START);
+      await ensureSessionsMaterialized(5, PROGRAMME_START);
       const sessions = await fetchNextSessions(3);
       if (!alive) return;
       setNextSessions(sessions);

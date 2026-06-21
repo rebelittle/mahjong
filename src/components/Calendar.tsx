@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { SESSION_TEMPLATES } from "../data/sessionTemplates";
 import { fetchSessionsInRange } from "../lib/dataApi";
+import { supabase } from "../lib/supabase";
 import type { SessionRow } from "../lib/database.types";
+import { formatSessionDate } from "../lib/utils";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -10,7 +12,6 @@ const MONTH_NAMES = [
 ];
 const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// Convert an ISO timestamp to YYYY-MM-DD in the user's local timezone.
 function toLocalDay(iso: string): string {
   const d = new Date(iso);
   return [
@@ -34,23 +35,9 @@ export default function Calendar({ authLoading }: Props) {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [fetching, setFetching] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [daySeatCounts, setDaySeatCounts] = useState<Record<string, number>>({});
 
   const atMin = year === START_YEAR && month === START_MONTH;
-
-  useEffect(() => {
-    if (authLoading) return;
-    setFetching(true);
-    setSelectedDay(null);
-    // Pad the query range by 1 day each side to absorb timezone offset (EDT = UTC-4).
-    const from = new Date(year, month, 0).toISOString();
-    const to = new Date(year, month + 1, 2).toISOString();
-    // Belt-and-suspenders: drop any orphaned pre-programme sessions regardless of
-    // whether migration 0008 has been run (first real session is Jun 30 2026).
-    fetchSessionsInRange(from, to)
-      .then((rows) => setSessions(rows.filter((s) => s.starts_at >= "2026-06-30")))
-      .catch(console.error)
-      .finally(() => setFetching(false));
-  }, [year, month, authLoading]);
 
   // Group sessions by local date key, sorted by start time within each day.
   const sessionsByDay = useMemo(() => {
@@ -75,6 +62,44 @@ export default function Calendar({ authLoading }: Props) {
     while (arr.length % 7 !== 0) arr.push(null);
     return arr;
   }, [year, month]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    setFetching(true);
+    setSelectedDay(null);
+    // Pad the query range by 1 day each side to absorb timezone offset (EDT = UTC-4).
+    const from = new Date(year, month, 0).toISOString();
+    const to = new Date(year, month + 1, 2).toISOString();
+    fetchSessionsInRange(from, to)
+      .then((rows) => setSessions(rows.filter((s) => s.starts_at >= "2026-06-30")))
+      .catch(console.error)
+      .finally(() => setFetching(false));
+  }, [year, month, authLoading]);
+
+  // Fetch seat counts whenever a day is selected.
+  useEffect(() => {
+    if (!selectedDay) {
+      setDaySeatCounts({});
+      return;
+    }
+    const daySessions = sessions.filter((s) => toLocalDay(s.starts_at) === selectedDay);
+    if (daySessions.length === 0) return;
+    const ids = daySessions.map((s) => s.id);
+    type SeatLite = { session_id: string; profile_id: string | null };
+    supabase
+      .from("seats")
+      .select("session_id, profile_id")
+      .in("session_id", ids)
+      .then(({ data }) => {
+        const counts: Record<string, number> = {};
+        for (const id of ids) counts[id] = 0;
+        for (const s of (data ?? []) as unknown as SeatLite[]) {
+          if (s.profile_id) counts[s.session_id] = (counts[s.session_id] ?? 0) + 1;
+        }
+        setDaySeatCounts(counts);
+      })
+      .catch(console.error);
+  }, [selectedDay, sessions]);
 
   const todayKey = toLocalDay(today.toISOString());
 
@@ -128,14 +153,14 @@ export default function Calendar({ authLoading }: Props) {
         ))}
       </div>
 
-      {/* Calendar grid */}
+      {/* Calendar grid — session days are 3× taller than empty days */}
       <div className={`grid grid-cols-7 transition-opacity ${fetching ? "opacity-40" : ""}`}>
         {cells.map((day, i) => {
           if (!day) {
             return (
               <div
                 key={`e-${i}`}
-                className="min-h-[54px] border-b border-r border-fox-cream-100/70 bg-fox-cream-50/30 last-of-type:border-r-0"
+                className="border-b border-r border-fox-cream-100/70 bg-fox-cream-50/30 last-of-type:border-r-0"
               />
             );
           }
@@ -153,7 +178,8 @@ export default function Calendar({ authLoading }: Props) {
               onClick={() => hasSess && setSelectedDay(isSelected ? null : key)}
               disabled={!hasSess}
               className={[
-                "group min-h-[54px] border-b border-fox-cream-100/70 p-1.5 text-left transition",
+                "group border-b border-fox-cream-100/70 p-1.5 text-left transition",
+                hasSess ? "min-h-[162px]" : "min-h-[54px]",
                 isLastInRow ? "" : "border-r",
                 isSelected
                   ? "bg-fox-yellow-500/10"
@@ -174,16 +200,20 @@ export default function Calendar({ authLoading }: Props) {
               >
                 {day}
               </span>
-              {daySess.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-[3px]">
+              {hasSess && (
+                <div className="mt-2 space-y-1.5">
                   {daySess.map((s) => {
                     const tpl = SESSION_TEMPLATES.find((t) => t.type === s.type);
                     return (
-                      <span
-                        key={s.id}
-                        className="h-[6px] w-[6px] rounded-full"
-                        style={{ background: tpl?.glyphColor ?? "#13294A" }}
-                      />
+                      <div key={s.id} className="flex items-center gap-1">
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ background: tpl?.glyphColor ?? "#13294A" }}
+                        />
+                        <p className="truncate text-[9px] font-medium leading-tight text-fox-navy-700">
+                          {tpl?.title}
+                        </p>
+                      </div>
                     );
                   })}
                 </div>
@@ -193,41 +223,24 @@ export default function Calendar({ authLoading }: Props) {
         })}
       </div>
 
-      {/* Expanded day panel */}
+      {/* Expanded day panel — full session cards matching the homepage style */}
       {selectedDay && selectedSessions.length > 0 && (
-        <div className="border-t border-fox-cream-200 bg-fox-cream-50/70 p-4 sm:p-5">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-fox-ink/55">
+        <div className="border-t border-fox-cream-200 p-4 sm:p-6">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-fox-ink/55">
             {new Date(selectedDay + "T12:00:00").toLocaleDateString(undefined, {
               weekday: "long",
               month: "long",
               day: "numeric",
             })}
           </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {selectedSessions.map((s) => {
-              const tpl = SESSION_TEMPLATES.find((t) => t.type === s.type);
-              if (!tpl) return null;
-              const startD = new Date(s.starts_at);
-              const endD = new Date(s.ends_at);
-              const timeStr = `${startD.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} – ${endD.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
-              return (
-                <Link
-                  key={s.id}
-                  to={`/session/${s.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-fox-cream-200 bg-white px-3.5 py-3 transition hover:border-fox-yellow-500/50 hover:shadow-sm"
-                >
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: tpl.glyphColor }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-fox-navy-700">{tpl.title}</p>
-                    <p className="text-xs text-fox-ink/60">{timeStr}</p>
-                  </div>
-                  <span className="btn-primary shrink-0 text-xs">Pick a seat</span>
-                </Link>
-              );
-            })}
+          <div className={`grid gap-4 ${selectedSessions.length > 1 ? "sm:grid-cols-2" : ""}`}>
+            {selectedSessions.map((s) => (
+              <CalendarSessionCard
+                key={s.id}
+                session={s}
+                seatsTaken={daySeatCounts[s.id] ?? 0}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -247,5 +260,66 @@ export default function Calendar({ authLoading }: Props) {
           ))}
       </div>
     </section>
+  );
+}
+
+// Full session card — mirrors the SessionCard layout on the homepage.
+function CalendarSessionCard({
+  session,
+  seatsTaken,
+}: {
+  session: SessionRow;
+  seatsTaken: number;
+}) {
+  const tpl = SESSION_TEMPLATES.find((t) => t.type === session.type);
+  if (!tpl) return null;
+
+  const max = tpl.maxTables;
+  const visibleMax =
+    max <= 2
+      ? seatsTaken >= 4 ? 8 : 4
+      : seatsTaken >= 12 ? 16 : seatsTaken >= 8 ? 12 : 8;
+
+  const d = formatSessionDate(session.starts_at);
+  const end = formatSessionDate(session.ends_at);
+
+  return (
+    <article className="group card relative flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fox-yellow-500/60 via-fox-yellow-300/50 to-fox-yellow-500/60 opacity-0 transition group-hover:opacity-100" />
+      <div className="flex items-start gap-3 border-b border-fox-cream-200 p-5">
+        <CalendarTile glyph={tpl.glyph} color={tpl.glyphColor} />
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[0.84rem]">{tpl.title}</h3>
+          <p className="text-sm text-fox-ink/70">{tpl.tagline}</p>
+        </div>
+      </div>
+      <div className="flex-1 p-5">
+        <p className="mb-2 text-sm font-medium text-fox-navy-700">
+          {d.day}, {d.date} · {d.time} – {end.time}
+        </p>
+        <p className="text-sm text-fox-ink/75">{tpl.description}</p>
+      </div>
+      <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
+        <span className="text-sm text-fox-ink/70">
+          <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
+          <span className="text-fox-ink/50"> / {visibleMax} seats</span>
+        </span>
+        <Link to={`/session/${session.id}`} className="btn-primary">
+          Pick a seat
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function CalendarTile({ glyph, color }: { glyph: string; color: string }) {
+  return (
+    <svg width="44" height="60" viewBox="0 0 40 56" className="shrink-0 drop-shadow-sm" aria-hidden>
+      <rect x="1" y="1" width="38" height="54" rx="6" ry="6" fill="#FBF3DA" stroke="#A6916A" strokeWidth="1" />
+      <rect x="3" y="3" width="34" height="50" rx="4.5" ry="4.5" fill="none" stroke="#D9C696" strokeWidth="0.6" />
+      <text x="20" y="36" textAnchor="middle" fontFamily="serif" fontSize="22" fontWeight="700" fill={color}>
+        {glyph}
+      </text>
+    </svg>
   );
 }
