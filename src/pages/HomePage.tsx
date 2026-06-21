@@ -46,8 +46,8 @@ export default function HomePage() {
               Summer 2026 · Fox Hill School
             </p>
             <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">
-              A summer of <em className="font-display italic text-fox-yellow-600">mahjong</em>,
-              <br className="hidden sm:block" /> right at school.
+              A summer of <em className="font-display italic text-fox-yellow-600">mahjong</em>
+              <br className="hidden sm:block" />.
             </h1>
             <p className="mt-5 max-w-xl text-fox-ink/75">
               Friendly weekly sessions all summer long for players who already know the
