@@ -35,8 +35,8 @@ export const SESSION_TEMPLATES: SessionTemplate[] = [
     timeLabel: "6:00 – 8:00 PM",
     maxTables: 4,
     priceLabel: "$40 · 2 hours",
-    glyph: "竹",
-    glyphColor: "#0F8A5F",
+    glyph: "南",
+    glyphColor: "#B8302A",
   },
   {
     type: "experienced",

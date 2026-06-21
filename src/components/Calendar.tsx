@@ -44,8 +44,10 @@ export default function Calendar({ authLoading }: Props) {
     // Pad the query range by 1 day each side to absorb timezone offset (EDT = UTC-4).
     const from = new Date(year, month, 0).toISOString();
     const to = new Date(year, month + 1, 2).toISOString();
+    // Belt-and-suspenders: drop any orphaned pre-programme sessions regardless of
+    // whether migration 0008 has been run (first real session is Jun 30 2026).
     fetchSessionsInRange(from, to)
-      .then(setSessions)
+      .then((rows) => setSessions(rows.filter((s) => s.starts_at >= "2026-06-30")))
       .catch(console.error)
       .finally(() => setFetching(false));
   }, [year, month, authLoading]);
@@ -212,7 +214,7 @@ export default function Calendar({ authLoading }: Props) {
                 <Link
                   key={s.id}
                   to={`/session/${s.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-fox-cream-200 bg-white px-3.5 py-2.5 transition hover:border-fox-yellow-500/50 hover:shadow-sm"
+                  className="flex items-center gap-3 rounded-xl border border-fox-cream-200 bg-white px-3.5 py-3 transition hover:border-fox-yellow-500/50 hover:shadow-sm"
                 >
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
@@ -222,7 +224,7 @@ export default function Calendar({ authLoading }: Props) {
                     <p className="truncate text-sm font-medium text-fox-navy-700">{tpl.title}</p>
                     <p className="text-xs text-fox-ink/60">{timeStr}</p>
                   </div>
-                  <span className="shrink-0 text-sm text-fox-yellow-700">→</span>
+                  <span className="btn-primary shrink-0 text-xs">Pick a seat</span>
                 </Link>
               );
             })}
@@ -230,17 +232,19 @@ export default function Calendar({ authLoading }: Props) {
         </div>
       )}
 
-      {/* Legend */}
+      {/* Legend — deduplicated by title so "Lesson for Beginners" appears once */}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-fox-cream-200 px-5 py-3">
-        {SESSION_TEMPLATES.map((tpl) => (
-          <div key={tpl.type} className="flex items-center gap-1.5">
-            <span
-              className="h-2 w-2 shrink-0 rounded-full"
-              style={{ background: tpl.glyphColor }}
-            />
-            <span className="text-xs text-fox-ink/60">{tpl.title}</span>
-          </div>
-        ))}
+        {SESSION_TEMPLATES
+          .filter((tpl, i, arr) => arr.findIndex((t) => t.title === tpl.title) === i)
+          .map((tpl) => (
+            <div key={tpl.type} className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: tpl.glyphColor }}
+              />
+              <span className="text-xs text-fox-ink/60">{tpl.title}</span>
+            </div>
+          ))}
       </div>
     </section>
   );
