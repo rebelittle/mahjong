@@ -9,14 +9,20 @@ import { SESSION_AMENITIES, SESSION_TEMPLATES } from "../data/sessionTemplates";
 
 const POSITIONS: SeatPosition[] = ["east", "south", "west", "north"];
 const TABLE_TILTS: Record<number, number> = { 1: -2, 2: 1.5, 3: -1.5, 4: 2 };
-// Felt "play mat" colour per table: 1 red · 2 white · 3 pink · 4 blue.
+// Felt "play mat" colour per table: 1 pink · 2 blue · 3 red · 4 green.
 const TABLE_MATS: Record<number, { base: string; edge: string }> = {
-  1: { base: "#C23A33", edge: "#9E2A24" }, // red
-  2: { base: "#FBF7EF", edge: "#E3DAC8" }, // white
-  3: { base: "#EBA6BC", edge: "#D5859F" }, // pink
-  4: { base: "#2F6BB0", edge: "#1F5BA8" }, // blue
+  1: { base: "#EBA6BC", edge: "#D5859F" }, // pink
+  2: { base: "#2F6BB0", edge: "#1F5BA8" }, // blue
+  3: { base: "#C23A33", edge: "#9E2A24" }, // red
+  4: { base: "#3D9262", edge: "#2D7A50" }, // green
 };
-const TABLE_NAMES: Record<number, string> = { 1: "Red", 2: "White", 3: "Pink", 4: "Blue" };
+const TABLE_NAMES: Record<number, string> = { 1: "Pink", 2: "Blue", 3: "Red", 4: "Green" };
+const TABLE_NAME_COLORS: Record<number, string> = {
+  1: "#B5336E", // pink
+  2: "#1F5BA8", // blue
+  3: "#B8302A", // red
+  4: "#286B47", // green
+};
 const WIND_GLYPH: Record<SeatPosition, string> = {
   east: "東",
   south: "南",
@@ -454,7 +460,7 @@ function TableTopSvg({ tableNumber }: { tableNumber: number }) {
         <rect x="0" y="0" width="70" height="50" rx="6" fill="#FBF3DA" stroke="#A6916A" strokeWidth="0.8" />
         <rect x="3" y="3" width="64" height="44" rx="4" fill="none" stroke="#D9C696" strokeWidth="0.5" />
         <text x="35" y="28" textAnchor="middle" fontFamily="serif" fontSize="9" fontWeight="700" letterSpacing="2" fill="#13294A" opacity="0.55">TABLE</text>
-        <text x="35" y="46" textAnchor="middle" fontFamily="serif" fontSize="14" fontWeight="700" fill="#B8302A">{TABLE_NAMES[tableNumber] ?? tableNumber}</text>
+        <text x="35" y="46" textAnchor="middle" fontFamily="serif" fontSize="14" fontWeight="700" fill={TABLE_NAME_COLORS[tableNumber] ?? "#B8302A"}>{TABLE_NAMES[tableNumber] ?? tableNumber}</text>
       </g>
     </svg>
   );
