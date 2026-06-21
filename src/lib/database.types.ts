@@ -4,7 +4,7 @@
 // fields would collapse to `Record<PropertyKey, never>` and the rpc() signature
 // would refuse arguments.
 
-export type SessionType = "mommy" | "beginner" | "experienced";
+export type SessionType = "mommy" | "beginner" | "experienced" | "openplay";
 export type SkillLevel = "beginner" | "intermediate" | "advanced";
 export type SeatPosition = "east" | "south" | "west" | "north";
 
@@ -80,7 +80,7 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       ensure_sessions_materialized: {
-        Args: { weeks_ahead: number };
+        Args: { weeks_ahead: number; start_from?: string };
         Returns: undefined;
       };
       claim_seat: {

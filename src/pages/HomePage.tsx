@@ -1,31 +1,32 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { SESSION_AMENITIES, SESSION_TEMPLATES, type SessionTemplate } from "../data/sessionTemplates";
-import { ensureSessionsMaterialized, fetchUpcomingByType } from "../lib/dataApi";
-import type { SessionRow, SessionType } from "../lib/database.types";
+import { ensureSessionsMaterialized, fetchNextSessions } from "../lib/dataApi";
+import type { SessionRow } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
+import { formatSessionDate } from "../lib/utils";
+import Calendar from "../components/Calendar";
+
+// The programme start date: sessions are created from this Sunday onward so
+// no sessions materialise in the week before Jun 30.
+const PROGRAMME_START = "2026-06-28";
 
 export default function HomePage() {
   const { user, profile, loading: authLoading } = useAuth();
-  const [upcoming, setUpcoming] = useState<Record<SessionType, SessionRow | null> | null>(null);
+  const [nextSessions, setNextSessions] = useState<SessionRow[]>([]);
   const [seatCounts, setSeatCounts] = useState<Record<string, number>>({});
 
-  // Wait for Clerk to finish rehydrating before querying Supabase.
-  // Without this guard, a hard refresh fires the query before Clerk has
-  // restored its session — getClerkToken() returns null, the request hits
-  // the `to authenticated` RLS policy as anonymous, and sessions come back
-  // empty, so "Pick a seat" buttons never appear until the next navigation.
   useEffect(() => {
     if (authLoading) return;
     let alive = true;
     (async () => {
-      await ensureSessionsMaterialized(14);
-      const data = await fetchUpcomingByType();
+      await ensureSessionsMaterialized(20, PROGRAMME_START);
+      const sessions = await fetchNextSessions(3);
       if (!alive) return;
-      setUpcoming(data);
-      const ids = Object.values(data).filter(Boolean).map((s) => s!.id);
-      if (ids.length > 0) {
+      setNextSessions(sessions);
+      if (sessions.length > 0) {
+        const ids = sessions.map((s) => s.id);
         const { data: seats } = await supabase
           .from("seats")
           .select("session_id, profile_id")
@@ -44,6 +45,7 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 pt-10 sm:px-6">
+      {/* ── Hero ── */}
       <section className="card mb-10 overflow-hidden">
         <div className="grid gap-6 p-7 sm:grid-cols-[1.4fr_1fr] sm:p-9">
           <div>
@@ -71,30 +73,42 @@ export default function HomePage() {
               )}
             </div>
           </div>
-
           <DecorativeTileStack />
         </div>
       </section>
 
+      {/* ── Next 3 session cards ── */}
       <div id="sessions" className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-2xl">This week's sessions</h2>
-
+        <h2 className="text-2xl">Upcoming sessions</h2>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SESSION_TEMPLATES.map((tpl) => {
-          const session = upcoming?.[tpl.type] ?? null;
-          return (
-            <SessionCard
-              key={tpl.type}
-              template={tpl}
-              session={session}
-              seatsTaken={session ? (seatCounts[session.id] ?? 0) : 0}
-            />
-          );
-        })}
+        {nextSessions.length > 0
+          ? nextSessions.map((session) => {
+              const tpl = SESSION_TEMPLATES.find((t) => t.type === session.type);
+              if (!tpl) return null;
+              return (
+                <SessionCard
+                  key={session.id}
+                  template={tpl}
+                  session={session}
+                  seatsTaken={seatCounts[session.id] ?? 0}
+                />
+              );
+            })
+          : SESSION_TEMPLATES.slice(0, 3).map((tpl) => (
+              <SessionCardSkeleton key={tpl.type} template={tpl} />
+            ))}
       </div>
 
+      {/* ── Monthly calendar ── */}
+      <div className="mb-4 mt-12 flex items-baseline justify-between">
+        <h2 className="text-2xl">Full schedule</h2>
+        <span className="text-xs uppercase tracking-widest text-fox-ink/50">Click a day to see sessions</span>
+      </div>
+      <Calendar authLoading={authLoading} />
+
+      {/* ── Good to know ── */}
       <section className="card mt-12 overflow-hidden">
         <div className="grid gap-5 p-7 sm:grid-cols-[auto_1fr] sm:items-center sm:p-8">
           <div className="text-center sm:text-left">
@@ -129,10 +143,18 @@ function SessionCard({
   seatsTaken,
 }: {
   template: SessionTemplate;
-  session: SessionRow | null;
+  session: SessionRow;
   seatsTaken: number;
 }) {
-  const dateLabel = template.staticDateLabel;
+  const d = formatSessionDate(session.starts_at);
+  const dateLabel = `${d.day}, ${d.date} · ${d.time}`;
+
+  // Visible seat cap based on how many tables are unlocked for this type.
+  const max = template.maxTables;
+  const visibleMax =
+    max <= 2
+      ? seatsTaken >= 4 ? 8 : 4
+      : seatsTaken >= 12 ? 16 : seatsTaken >= 8 ? 12 : 8;
 
   return (
     <article className="group card relative flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
@@ -148,15 +170,36 @@ function SessionCard({
         <p className="mb-2 text-sm font-medium text-fox-navy-700">{dateLabel}</p>
         <p className="text-sm text-fox-ink/75">{template.description}</p>
       </div>
-      {session && (
-        <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
-          <span className="text-sm text-fox-ink/70">
-            <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
-            <span className="text-fox-ink/50"> / {seatsTaken >= 12 ? 16 : seatsTaken >= 8 ? 12 : 8} seats</span>
-          </span>
-          <Link to={`/session/${session.id}`} className="btn-primary">Pick a seat</Link>
+      <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
+        <span className="text-sm text-fox-ink/70">
+          <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
+          <span className="text-fox-ink/50"> / {visibleMax} seats</span>
+        </span>
+        <Link to={`/session/${session.id}`} className="btn-primary">Pick a seat</Link>
+      </div>
+    </article>
+  );
+}
+
+// Shown while sessions are loading — same shape but no date/button.
+function SessionCardSkeleton({ template }: { template: SessionTemplate }) {
+  return (
+    <article className="card relative flex flex-col overflow-hidden">
+      <div className="flex items-start gap-3 border-b border-fox-cream-200 p-5">
+        <CardTile glyph={template.glyph} color={template.glyphColor} />
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[0.84rem]">{template.title}</h3>
+          <p className="text-sm text-fox-ink/70">{template.tagline}</p>
         </div>
-      )}
+      </div>
+      <div className="flex-1 p-5">
+        <div className="mb-2 h-4 w-2/3 animate-pulse rounded bg-fox-cream-200" />
+        <p className="text-sm text-fox-ink/75">{template.description}</p>
+      </div>
+      <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
+        <div className="h-4 w-16 animate-pulse rounded bg-fox-cream-200" />
+        <div className="h-8 w-24 animate-pulse rounded-full bg-fox-cream-200" />
+      </div>
     </article>
   );
 }

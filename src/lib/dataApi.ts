@@ -1,37 +1,46 @@
 import { supabase, rpc } from "./supabase";
-import type { Profile, Seat, SessionRow, SessionType, SkillLevel } from "./database.types";
+import type { Profile, Seat, SessionRow, SkillLevel } from "./database.types";
 
 // Ensures upcoming sessions exist as concrete rows. Safe to call on every page load.
-export async function ensureSessionsMaterialized(weeksAhead = 14) {
+// start_from (YYYY-MM-DD) pins the earliest date sessions are created; pass the
+// programme start date so sessions aren't created for weeks before the first event.
+export async function ensureSessionsMaterialized(weeksAhead = 20, startFrom?: string) {
   try {
-    await rpc("ensure_sessions_materialized", { weeks_ahead: weeksAhead });
+    await rpc("ensure_sessions_materialized", {
+      weeks_ahead: weeksAhead,
+      ...(startFrom ? { start_from: startFrom } : {}),
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn("ensure_sessions_materialized failed:", msg);
   }
 }
 
-// The next upcoming session of each type (or null if none).
-export async function fetchUpcomingByType(): Promise<Record<SessionType, SessionRow | null>> {
+// The next N upcoming sessions in chronological order.
+export async function fetchNextSessions(n: number): Promise<SessionRow[]> {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("sessions")
     .select("*")
     .gte("starts_at", now)
     .eq("status", "open")
-    .order("starts_at", { ascending: true });
-
+    .order("starts_at", { ascending: true })
+    .limit(n);
   if (error) throw error;
+  return (data ?? []) as SessionRow[];
+}
 
-  const byType: Record<SessionType, SessionRow | null> = {
-    mommy: null,
-    beginner: null,
-    experienced: null,
-  };
-  for (const row of (data ?? []) as SessionRow[]) {
-    if (!byType[row.type]) byType[row.type] = row;
-  }
-  return byType;
+// All sessions whose starts_at falls within [from, to] (ISO strings).
+export async function fetchSessionsInRange(from: string, to: string): Promise<SessionRow[]> {
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .gte("starts_at", from)
+    .lte("starts_at", to)
+    .eq("status", "open")
+    .order("starts_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as SessionRow[];
 }
 
 export async function fetchSessionWithSeats(sessionId: string): Promise<{

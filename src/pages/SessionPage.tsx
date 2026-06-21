@@ -176,19 +176,27 @@ export default function SessionPage() {
     if (tables[s.table_number]) tables[s.table_number].push(s);
   }
 
-  // Progressive table reveal: start with 2 tables. Open table 3 only once
-  // tables 1–2 are completely full (8 seats), and table 4 only once tables
-  // 1–3 are full (12 seats). This nudges people toward completing a foursome
-  // at an existing table instead of scattering across empty ones.
+  // Progressive table reveal — behaviour varies by session type:
+  //   maxTables=2 (Mommy Mahj): start with 1 table, unlock 2nd when 1st is full.
+  //   maxTables=4 (all others): start with 2 tables; unlock 3rd when 1&2 full,
+  //                              unlock 4th when 1–3 full.
+  const maxTables = presentation.maxTables ?? 4;
+  const startCount = maxTables <= 2 ? 1 : 2;
   const isTableFull = (n: number) =>
     tables[n]?.length > 0 && tables[n].every((s) => s.profile_id);
   const tableHasAnyone = (n: number) => (tables[n] ?? []).some((s) => s.profile_id);
-  const visibleTables = new Set<number>([1, 2]);
-  // Table 3 unlocks when 1 & 2 are full; table 4 when 1, 2 & 3 are full.
-  if (isTableFull(1) && isTableFull(2)) visibleTables.add(3);
-  if (visibleTables.has(3) && isTableFull(3)) visibleTables.add(4);
-  // Never hide a table that already seats someone (e.g. claimed before reveal).
-  for (let n = 3; n <= 4; n++) if (tableHasAnyone(n)) visibleTables.add(n);
+
+  const visibleTables = new Set<number>();
+  for (let n = 1; n <= startCount; n++) visibleTables.add(n);
+  // Sequentially unlock each next table once all previous ones are full.
+  for (let n = startCount + 1; n <= maxTables; n++) {
+    if (!visibleTables.has(n - 1)) break;
+    const allPrevFull = Array.from({ length: n - 1 }, (_, i) => i + 1).every(isTableFull);
+    if (!allPrevFull) break;
+    visibleTables.add(n);
+  }
+  // Safety: never hide a table that already has a seated player.
+  for (let n = 1; n <= 4; n++) if (tableHasAnyone(n)) visibleTables.add(n);
 
   const visibleCapacity = visibleTables.size * 4;
 
