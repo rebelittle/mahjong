@@ -147,8 +147,9 @@ function SessionCard({
 
   // Visible seat cap based on how many tables are unlocked for this type.
   const max = template.maxTables;
-  const visibleMax =
-    max <= 2
+  const visibleMax = template.fixedTables !== undefined
+    ? template.fixedTables * 4
+    : max <= 2
       ? seatsTaken >= 4 ? 8 : 4
       : seatsTaken >= 12 ? 16 : seatsTaken >= 8 ? 12 : 8;
 

@@ -187,19 +187,24 @@ export default function SessionPage() {
   //   maxTables=4 (all others): start with 2 tables; unlock 3rd when 1&2 full,
   //                              unlock 4th when 1–3 full.
   const maxTables = presentation.maxTables ?? 4;
+  const fixedTables = presentation.fixedTables;
   const startCount = maxTables <= 2 ? 1 : 2;
   const isTableFull = (n: number) =>
     tables[n]?.length > 0 && tables[n].every((s) => s.profile_id);
   const tableHasAnyone = (n: number) => (tables[n] ?? []).some((s) => s.profile_id);
 
   const visibleTables = new Set<number>();
-  for (let n = 1; n <= startCount; n++) visibleTables.add(n);
-  // Sequentially unlock each next table once all previous ones are full.
-  for (let n = startCount + 1; n <= maxTables; n++) {
-    if (!visibleTables.has(n - 1)) break;
-    const allPrevFull = Array.from({ length: n - 1 }, (_, i) => i + 1).every(isTableFull);
-    if (!allPrevFull) break;
-    visibleTables.add(n);
+  if (fixedTables !== undefined) {
+    for (let n = 1; n <= fixedTables; n++) visibleTables.add(n);
+  } else {
+    for (let n = 1; n <= startCount; n++) visibleTables.add(n);
+    // Sequentially unlock each next table once all previous ones are full.
+    for (let n = startCount + 1; n <= maxTables; n++) {
+      if (!visibleTables.has(n - 1)) break;
+      const allPrevFull = Array.from({ length: n - 1 }, (_, i) => i + 1).every(isTableFull);
+      if (!allPrevFull) break;
+      visibleTables.add(n);
+    }
   }
   // Safety: never hide a table that already has a seated player.
   for (let n = 1; n <= 4; n++) if (tableHasAnyone(n)) visibleTables.add(n);

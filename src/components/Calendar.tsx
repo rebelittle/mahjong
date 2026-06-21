@@ -278,8 +278,9 @@ function CalendarSessionCard({
   if (!tpl) return null;
 
   const max = tpl.maxTables;
-  const visibleMax =
-    max <= 2
+  const visibleMax = tpl.fixedTables !== undefined
+    ? tpl.fixedTables * 4
+    : max <= 2
       ? seatsTaken >= 4 ? 8 : 4
       : seatsTaken >= 12 ? 16 : seatsTaken >= 8 ? 12 : 8;
 

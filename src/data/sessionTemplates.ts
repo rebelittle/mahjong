@@ -10,6 +10,8 @@ export interface SessionTemplate {
   // Maximum tables ever shown for this session type.
   // Mommy Mahj: 2 (starts at 1). All others: 4 (starts at 2).
   maxTables: number;
+  // When set, always show exactly this many tables (no progressive unlock).
+  fixedTables?: number;
   // Shown on the session page price/amenities panel.
   priceLabel?: string;
   // Used as the tile face on the session card and calendar legend.
@@ -47,6 +49,7 @@ export const SESSION_TEMPLATES: SessionTemplate[] = [
     dayLabel: "Wednesdays",
     timeLabel: "12:30 – 2:30 PM",
     maxTables: 2,
+    fixedTables: 1,
     priceLabel: "$50 · 2 hours",
     glyph: "東",
     glyphColor: "#1F5BA8",
@@ -60,7 +63,7 @@ export const SESSION_TEMPLATES: SessionTemplate[] = [
     dayLabel: "Wednesdays",
     timeLabel: "6:00 – 8:00 PM",
     maxTables: 4,
-    priceLabel: "$40 · 2 hours",
+    priceLabel: "$30 · 2 hours",
     glyph: "発",
     glyphColor: "#B07D00",
   },
@@ -86,6 +89,7 @@ export const SESSION_TEMPLATES: SessionTemplate[] = [
     dayLabel: "Fridays",
     timeLabel: "4:00 – 8:00 PM",
     maxTables: 2,
+    fixedTables: 2,
     priceLabel: "$80 · 4 hours",
     glyph: "花",
     glyphColor: "#7C3AED",
