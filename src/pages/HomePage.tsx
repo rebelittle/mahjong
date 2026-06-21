@@ -5,7 +5,6 @@ import { ensureSessionsMaterialized, fetchUpcomingByType } from "../lib/dataApi"
 import type { SessionRow, SessionType } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
-import { formatSessionDate } from "../lib/utils";
 
 export default function HomePage() {
   const { user, profile } = useAuth();
@@ -127,12 +126,7 @@ function SessionCard({
   session: SessionRow | null;
   seatsTaken: number;
 }) {
-  const dateLabel = session
-    ? (() => {
-        const d = formatSessionDate(session.starts_at);
-        return `${d.day}, ${d.date} · ${d.time}`;
-      })()
-    : `${template.dayLabel} · ${template.timeLabel}`;
+  const dateLabel = template.staticDateLabel;
 
   return (
     <article className="group card relative flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
