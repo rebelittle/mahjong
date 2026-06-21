@@ -104,9 +104,18 @@ export default function HomePage() {
       {/* ── Monthly calendar ── */}
       <div className="mb-4 mt-12 flex items-baseline justify-between">
         <h2 className="text-2xl">Full schedule</h2>
-        <span className="text-xs uppercase tracking-widest text-fox-ink/50">Click a day to see sessions</span>
+        {user && <span className="text-xs uppercase tracking-widest text-fox-ink/50">Click a day to see sessions</span>}
       </div>
-      <Calendar authLoading={authLoading} />
+      {authLoading ? (
+        <div className="card h-52 animate-pulse bg-fox-cream-50" />
+      ) : user ? (
+        <Calendar authLoading={authLoading} />
+      ) : (
+        <div className="card flex flex-col items-center gap-5 py-14 text-center">
+          <p className="text-fox-ink/70">Sign in to view the full schedule and reserve your seat.</p>
+          <Link to="/login" className="btn-primary">Sign in to see the calendar</Link>
+        </div>
+      )}
 
       {/* ── Good to know ── */}
       <section className="card mt-12 overflow-hidden">
