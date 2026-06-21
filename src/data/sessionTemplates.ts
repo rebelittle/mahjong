@@ -16,8 +16,7 @@ export interface SessionTemplate {
   glyphColor: string;
 }
 
-// Shared amenities for the evening experienced-player sessions.
-// Surfaced in a "Good to know" note rather than on every card.
+// Shared amenities surfaced in the "Good to know" section.
 export const SESSION_AMENITIES: string[] = [
   "Snacks and drinks provided",
   "Building is well air conditioned",
@@ -28,10 +27,10 @@ export const SESSION_AMENITIES: string[] = [
 export const SESSION_TEMPLATES: SessionTemplate[] = [
   {
     type: "mommy",
-    title: "Tuesday Evening Mahjong",
-    tagline: "For players who know the rules",
+    title: "Lesson for Beginners",
+    tagline: "New to Mah Jongg? You're in the right place!",
     description:
-      "A relaxed evening of real play for experienced players. A helper floats around if a rules question comes up.",
+      "No experience necessary — just curiosity and a willingness to learn. We'll walk you through the basics: how to read the tiles, the rules of play, and the strategy behind building your hand. By the end, you'll feel confident enough to sit down at the table and join in the fun. Come for the lesson, stay for the community!",
     dayLabel: "Tuesdays",
     timeLabel: "6:00 – 8:00 PM",
     staticDateLabel: "Tuesday, Jun 30 · 6:00 – 8:00 PM",
@@ -41,23 +40,23 @@ export const SESSION_TEMPLATES: SessionTemplate[] = [
   },
   {
     type: "experienced",
-    title: "Thursday Morning Mahjong",
-    tagline: "For players who know the rules",
+    title: "Mommy Mahj!",
+    tagline: "Tiles for you, fun for them!",
     description:
-      "For players already comfortable with the game. A helper floats around if a rules question comes up.",
-    dayLabel: "Thursdays",
-    timeLabel: "10:00 AM – 12:00 PM",
-    staticDateLabel: "Thursday, Jul 2 · 10:00 AM – 12:00 PM",
+      "Learn to mah jongg while your little ones play! Tova will walk you through the basics: how to read the tiles, the rules of play, and the strategy behind building your hand. Ms. Melanie will have fun summer activities planned for the kids while you learn!",
+    dayLabel: "Wednesdays",
+    timeLabel: "12:30 – 2:30 PM",
+    staticDateLabel: "Wednesday, Jul 1 · 12:30 – 2:30 PM",
     priceLabel: "$40 · 2 hours",
     glyph: "東",
     glyphColor: "#1F5BA8",
   },
   {
     type: "beginner",
-    title: "Friday Evening Mahjong",
-    tagline: "For players who know the rules",
+    title: "Lesson for Beginners",
+    tagline: "New to Mah Jongg? You're in the right place!",
     description:
-      "A relaxed evening of real play for experienced players. A helper floats around if a rules question comes up.",
+      "No experience necessary — just curiosity and a willingness to learn. We'll walk you through the basics: how to read the tiles, the rules of play, and the strategy behind building your hand. By the end, you'll feel confident enough to sit down at the table and join in the fun. Come for the lesson, stay for the community!",
     dayLabel: "Fridays",
     timeLabel: "4:00 – 6:00 PM",
     staticDateLabel: "Friday, Jul 3 · 4:00 – 6:00 PM",

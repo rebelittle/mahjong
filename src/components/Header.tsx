@@ -11,7 +11,7 @@ export default function Header() {
         <Link to="/" className="flex items-center gap-3 transition hover:opacity-80">
           <TileLogo />
           <div className="leading-tight">
-            <div className="font-display text-xl text-fox-navy-700">Fox Hill Mahjong</div>
+            <div className="font-display text-xl text-fox-navy-700">Fox Hill Mah Jongg</div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fox-yellow-700">
               Summer Sessions
             </div>

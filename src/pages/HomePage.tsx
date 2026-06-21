@@ -51,13 +51,13 @@ export default function HomePage() {
               Summer 2026 · Fox Hill School
             </p>
             <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">
-              A summer of <em className="font-display italic text-fox-yellow-600">mahjong</em>
+              A summer of <em className="font-display italic text-fox-yellow-600">Mah Jongg</em>
               <br className="hidden sm:block" />
             </h1>
             <p className="mt-5 max-w-xl text-fox-ink/75">
-              Friendly weekly sessions all summer long for players who already know the
-              rules. Pick the evening you want, grab your seat, and see who's joining you
-              at the table. A helper floats around every game if a question comes up.
+              Wonder what all the hype around Mah Jongg is about? It's more than just a
+              game — it's a chance to challenge your mind, connect with friends, and
+              discover your community! Join us at the table!
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               {user ? (

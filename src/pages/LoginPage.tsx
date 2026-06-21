@@ -48,7 +48,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-xs text-fox-ink/55">
           By signing in you agree to be charmingly present at one of the three weekly
-          Mahjong sessions at Fox Hill School.
+          Mah Jongg sessions at Fox Hill School.
         </p>
       </div>
     </main>
