@@ -126,7 +126,7 @@ export default function HomePage() {
       </section>
 
       <p className="mt-12 text-center text-sm text-fox-ink/55">
-        Questions? Talk to Mrs. Little at drop-off, or email
+        Questions? Talk to Melanie via email
         {" "}<span className="font-medium text-fox-navy-700">mlittle@foxhill-school.com</span>.
       </p>
     </main>
