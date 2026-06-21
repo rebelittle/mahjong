@@ -47,7 +47,7 @@ export const SESSION_TEMPLATES: SessionTemplate[] = [
     dayLabel: "Wednesdays",
     timeLabel: "12:30 – 2:30 PM",
     maxTables: 2,
-    priceLabel: "$40 · 2 hours",
+    priceLabel: "$50 · 2 hours",
     glyph: "東",
     glyphColor: "#1F5BA8",
   },

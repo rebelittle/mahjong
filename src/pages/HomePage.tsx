@@ -110,14 +110,10 @@ export default function HomePage() {
 
       {/* ── Good to know ── */}
       <section className="card mt-12 overflow-hidden">
-        <div className="grid gap-5 p-7 sm:grid-cols-[auto_1fr] sm:items-center sm:p-8">
-          <div className="text-center sm:text-left">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fox-yellow-700">
-              Good to know
-            </p>
-            <p className="mt-2 font-display text-3xl text-fox-navy-700">$40</p>
-            <p className="text-sm text-fox-ink/60">per 2-hour session</p>
-          </div>
+        <div className="p-7 sm:p-8">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.28em] text-fox-yellow-700">
+            Good to know
+          </p>
           <ul className="grid gap-2 sm:grid-cols-2">
             {SESSION_AMENITIES.map((item) => (
               <li key={item} className="flex items-start gap-2 text-sm text-fox-ink/80">
