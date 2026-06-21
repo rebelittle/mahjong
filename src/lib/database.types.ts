@@ -4,7 +4,7 @@
 // fields would collapse to `Record<PropertyKey, never>` and the rpc() signature
 // would refuse arguments.
 
-export type SessionType = "mommy" | "beginner" | "experienced" | "openplay";
+export type SessionType = "mommy" | "beginner" | "experienced" | "openplay" | "crack_bam_create";
 export type SkillLevel = "beginner" | "intermediate" | "advanced";
 export type SeatPosition = "east" | "south" | "west" | "north";
 

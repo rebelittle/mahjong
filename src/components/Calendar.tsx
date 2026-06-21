@@ -298,6 +298,11 @@ function CalendarSessionCard({
           {d.day}, {d.date} · {d.time} – {end.time}
         </p>
         <p className="text-sm text-fox-ink/75">{tpl.description}</p>
+        {session.notes && (
+          <p className="mt-3 border-t border-fox-cream-100 pt-3 text-sm text-fox-ink/65">
+            {session.notes}
+          </p>
+        )}
       </div>
       <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
         <span className="text-sm text-fox-ink/70">

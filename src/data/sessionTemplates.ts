@@ -1,4 +1,4 @@
-export type SessionType = "mommy" | "beginner" | "experienced" | "openplay";
+export type SessionType = "mommy" | "beginner" | "experienced" | "openplay" | "crack_bam_create";
 
 export interface SessionTemplate {
   type: SessionType;
@@ -76,5 +76,18 @@ export const SESSION_TEMPLATES: SessionTemplate[] = [
     priceLabel: "$40 · 2 hours",
     glyph: "南",
     glyphColor: "#B8302A",
+  },
+  {
+    type: "crack_bam_create",
+    title: "Crack, Bam, Create!",
+    tagline: "Mah Jongg meets mindful art",
+    description:
+      "Fox Hill Mah Jongg is teaming up with Create Space for a brand-new kind of event that exercises both sides of your brain! A special collaboration combining a 2-hour Mah Jongg lesson led by Tova with a 2-hour mindful art lesson led by Paige of Create Space. Start by learning (or sharpening) your Mah Jongg skills, then unwind and tap into your creativity with a guided, mindful art experience. It's the perfect blend of strategy and serenity — come for the tiles, stay for the art, and leave with new friends and a little extra calm. Spots are limited!",
+    dayLabel: "Fridays",
+    timeLabel: "4:00 – 8:00 PM",
+    maxTables: 2,
+    priceLabel: "$80 · 4 hours",
+    glyph: "花",
+    glyphColor: "#7C3AED",
   },
 ];

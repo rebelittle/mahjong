@@ -214,6 +214,9 @@ export default function SessionPage() {
               {" · "}
               {d.time} – {end.time}
             </p>
+            {session.notes && (
+              <p className="mt-2 text-sm text-fox-ink/70">{session.notes}</p>
+            )}
           </div>
           <div className="text-left sm:text-right">
             <div className="font-display text-4xl text-fox-navy-700">
