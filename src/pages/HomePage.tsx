@@ -7,11 +7,17 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
 
 export default function HomePage() {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [upcoming, setUpcoming] = useState<Record<SessionType, SessionRow | null> | null>(null);
   const [seatCounts, setSeatCounts] = useState<Record<string, number>>({});
 
+  // Wait for Clerk to finish rehydrating before querying Supabase.
+  // Without this guard, a hard refresh fires the query before Clerk has
+  // restored its session — getClerkToken() returns null, the request hits
+  // the `to authenticated` RLS policy as anonymous, and sessions come back
+  // empty, so "Pick a seat" buttons never appear until the next navigation.
   useEffect(() => {
+    if (authLoading) return;
     let alive = true;
     (async () => {
       await ensureSessionsMaterialized(14);
@@ -34,7 +40,7 @@ export default function HomePage() {
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [authLoading]);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 pt-10 sm:px-6">
