@@ -277,6 +277,9 @@ export default function SessionPage() {
             ))}
           </ul>
         </div>
+        <div className="border-t border-fox-cream-200 bg-fox-cream-50/60 px-6 py-2.5 text-center text-xs text-fox-ink/55 sm:px-7">
+          Cash or Venmo accepted on arrival
+        </div>
       </section>
 
       {/* ───── Your seat status (bottom bar) ───── */}
