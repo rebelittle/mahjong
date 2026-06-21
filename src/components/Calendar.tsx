@@ -86,19 +86,22 @@ export default function Calendar({ authLoading }: Props) {
     if (daySessions.length === 0) return;
     const ids = daySessions.map((s) => s.id);
     type SeatLite = { session_id: string; profile_id: string | null };
-    supabase
-      .from("seats")
-      .select("session_id, profile_id")
-      .in("session_id", ids)
-      .then(({ data }) => {
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from("seats")
+          .select("session_id, profile_id")
+          .in("session_id", ids);
         const counts: Record<string, number> = {};
         for (const id of ids) counts[id] = 0;
         for (const s of (data ?? []) as unknown as SeatLite[]) {
           if (s.profile_id) counts[s.session_id] = (counts[s.session_id] ?? 0) + 1;
         }
         setDaySeatCounts(counts);
-      })
-      .catch(console.error);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
   }, [selectedDay, sessions]);
 
   const todayKey = toLocalDay(today.toISOString());
