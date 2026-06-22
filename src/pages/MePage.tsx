@@ -56,7 +56,7 @@ export default function MePage() {
         <p className="mt-2 text-fox-ink/75">
           Where you'll be sitting. Need to cancel?{" "}
           <a href="mailto:mlittle@foxhill-school.com" className="font-medium text-fox-navy-700 underline-offset-2 hover:underline">
-            Email Mrs. Little
+            Email Melanie
           </a>.
         </p>
       </div>
