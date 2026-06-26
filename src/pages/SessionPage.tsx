@@ -209,7 +209,7 @@ export default function SessionPage() {
   // Safety: never hide a table that already has a seated player.
   for (let n = 1; n <= 4; n++) if (tableHasAnyone(n)) visibleTables.add(n);
 
-  const visibleCapacity = visibleTables.size * 4;
+  const visibleCapacity = [...visibleTables].filter((n) => tables[n]?.length > 0).length * 4;
 
   return (
     <main className="mx-auto max-w-6xl px-3 pb-32 pt-8 sm:px-6">
