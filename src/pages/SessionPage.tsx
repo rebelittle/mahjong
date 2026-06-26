@@ -318,7 +318,7 @@ function TableRow({
   render: (n: number) => React.ReactNode;
 }) {
   // Only render tables that actually exist in the bucketed map
-  const valid = tables.filter((n) => bucketed[n]);
+  const valid = tables.filter((n) => bucketed[n]?.length > 0);
   return (
     <div
       className="grid justify-items-center gap-8 sm:gap-20"
