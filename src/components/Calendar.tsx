@@ -319,15 +319,23 @@ function CalendarSessionCard({
           </p>
         )}
       </div>
-      <div className="flex items-center justify-between border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-fox-cream-200 bg-fox-cream-50/60 px-5 py-3">
         <span className="text-sm text-fox-ink/70">
           <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
           <span className="text-fox-ink/50"> / {visibleMax} seats</span>
         </span>
         {isFull ? (
-          <span className="rounded-full bg-tile-red/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-tile-red">
-            Full
-          </span>
+          <div className="flex items-center gap-2.5">
+            <span className="rounded-full bg-tile-red/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-tile-red">
+              Full
+            </span>
+            <Link
+              to={`/session/${session.id}`}
+              className="text-sm font-medium text-fox-navy-700 underline-offset-2 hover:underline"
+            >
+              See Tables →
+            </Link>
+          </div>
         ) : (
           <Link to={`/session/${session.id}`} className="btn-primary">
             Pick a seat
