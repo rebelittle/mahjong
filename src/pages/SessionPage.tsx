@@ -4,6 +4,7 @@ import { useAuth } from "../lib/AuthContext";
 import { supabase } from "../lib/supabase";
 import { claimSeat, fetchSessionWithSeats, releaseMySeat } from "../lib/dataApi";
 import { formatSessionDate, initialsOf } from "../lib/utils";
+import { visibleTablesFromSeats } from "../lib/seatLogic";
 import type { Profile, Seat, SeatPosition, SessionRow } from "../lib/database.types";
 import { SESSION_AMENITIES, SESSION_TEMPLATES } from "../data/sessionTemplates";
 
@@ -182,34 +183,15 @@ export default function SessionPage() {
     if (tables[s.table_number]) tables[s.table_number].push(s);
   }
 
-  // Progressive table reveal — behaviour varies by session type:
-  //   maxTables=2 (Mommy Mahj): start with 1 table, unlock 2nd when 1st is full.
-  //   maxTables=4 (all others): start with 2 tables; unlock 3rd when 1&2 full,
-  //                              unlock 4th when 1–3 full.
-  const maxTables = presentation.maxTables ?? 4;
-  const fixedTables = presentation.fixedTables;
-  const startCount = maxTables <= 2 ? 1 : 2;
-  const isTableFull = (n: number) =>
-    tables[n]?.length > 0 && tables[n].every((s) => s.profile_id);
-  const tableHasAnyone = (n: number) => (tables[n] ?? []).some((s) => s.profile_id);
-
-  const visibleTables = new Set<number>();
-  if (fixedTables !== undefined) {
-    for (let n = 1; n <= fixedTables; n++) visibleTables.add(n);
-  } else {
-    for (let n = 1; n <= startCount; n++) visibleTables.add(n);
-    // Sequentially unlock each next table once all previous ones are full.
-    for (let n = startCount + 1; n <= maxTables; n++) {
-      if (!visibleTables.has(n - 1)) break;
-      const allPrevFull = Array.from({ length: n - 1 }, (_, i) => i + 1).every(isTableFull);
-      if (!allPrevFull) break;
-      visibleTables.add(n);
-    }
-  }
-  // Safety: never hide a table that already has a seated player.
-  for (let n = 1; n <= 4; n++) if (tableHasAnyone(n)) visibleTables.add(n);
-
-  const visibleCapacity = [...visibleTables].filter((n) => tables[n]?.length > 0).length * 4;
+  // Which tables are visible + the capacity, derived from the real seat rows so
+  // a session capped to fewer tables (seats deleted) reports the smaller count.
+  const visibleTables = visibleTablesFromSeats(
+    seats,
+    presentation.maxTables ?? 4,
+    presentation.fixedTables,
+  );
+  const visibleCapacity = visibleTables.size * 4;
+  const isFull = visibleCapacity > 0 && takenCount >= visibleCapacity;
 
   return (
     <main className="mx-auto max-w-6xl px-3 pb-32 pt-8 sm:px-6">
@@ -233,7 +215,13 @@ export default function SessionPage() {
             <div className="font-display text-4xl text-fox-navy-700">
               {takenCount}<span className="text-fox-ink/30">/{visibleCapacity}</span>
             </div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-fox-ink/55">seats taken</p>
+            {isFull ? (
+              <span className="mt-1 inline-block rounded-full bg-tile-red/10 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-tile-red">
+                Full
+              </span>
+            ) : (
+              <p className="text-[11px] uppercase tracking-[0.22em] text-fox-ink/55">seats taken</p>
+            )}
           </div>
         </div>
         {errMsg && (

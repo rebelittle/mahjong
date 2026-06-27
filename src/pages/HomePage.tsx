@@ -6,6 +6,7 @@ import type { SessionRow } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
 import { formatSessionDate } from "../lib/utils";
+import { visibleCapacityFromSeats } from "../lib/seatLogic";
 import Calendar from "../components/Calendar";
 
 // The programme start date: sessions are created from this Sunday onward so
@@ -16,6 +17,7 @@ export default function HomePage() {
   const { user, profile, loading: authLoading } = useAuth();
   const [nextSessions, setNextSessions] = useState<SessionRow[]>([]);
   const [seatCounts, setSeatCounts] = useState<Record<string, number>>({});
+  const [seatMaxes, setSeatMaxes] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (authLoading) return;
@@ -29,15 +31,24 @@ export default function HomePage() {
         const ids = sessions.map((s) => s.id);
         const { data: seats } = await supabase
           .from("seats")
-          .select("session_id, profile_id")
+          .select("session_id, profile_id, table_number")
           .in("session_id", ids);
-        type SeatLite = { session_id: string; profile_id: string | null };
+        type SeatLite = { session_id: string; profile_id: string | null; table_number: number };
+        const rows = (seats ?? []) as unknown as SeatLite[];
         const counts: Record<string, number> = {};
-        for (const id of ids) counts[id] = 0;
-        for (const s of (seats ?? []) as unknown as SeatLite[]) {
-          if (s.profile_id) counts[s.session_id] = (counts[s.session_id] ?? 0) + 1;
+        const maxes: Record<string, number> = {};
+        for (const session of sessions) {
+          const tpl = SESSION_TEMPLATES.find((t) => t.type === session.type);
+          const own = rows.filter((r) => r.session_id === session.id);
+          counts[session.id] = own.filter((r) => r.profile_id).length;
+          maxes[session.id] = tpl
+            ? visibleCapacityFromSeats(own, tpl.maxTables, tpl.fixedTables)
+            : 0;
         }
-        if (alive) setSeatCounts(counts);
+        if (alive) {
+          setSeatCounts(counts);
+          setSeatMaxes(maxes);
+        }
       }
     })();
     return () => { alive = false; };
@@ -93,6 +104,7 @@ export default function HomePage() {
                   template={tpl}
                   session={session}
                   seatsTaken={seatCounts[session.id] ?? 0}
+                  seatsMax={seatMaxes[session.id] ?? 0}
                 />
               );
             })
@@ -146,21 +158,20 @@ function SessionCard({
   template,
   session,
   seatsTaken,
+  seatsMax,
 }: {
   template: SessionTemplate;
   session: SessionRow;
   seatsTaken: number;
+  seatsMax: number;
 }) {
   const d = formatSessionDate(session.starts_at);
   const dateLabel = `${d.day}, ${d.date} · ${d.time}`;
 
-  // Visible seat cap based on how many tables are unlocked for this type.
-  const max = template.maxTables;
-  const visibleMax = template.fixedTables !== undefined
-    ? template.fixedTables * 4
-    : max <= 2
-      ? seatsTaken >= 4 ? 8 : 4
-      : seatsTaken >= 12 ? 16 : seatsTaken >= 8 ? 12 : 8;
+  // Capacity is derived from the real seat rows (see seatLogic). Fall back to a
+  // single table's worth of seats until the counts load.
+  const visibleMax = seatsMax || 4;
+  const isFull = seatsTaken >= visibleMax;
 
   return (
     <article className="group card relative flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
@@ -186,7 +197,13 @@ function SessionCard({
           <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
           <span className="text-fox-ink/50"> / {visibleMax} seats</span>
         </span>
-        <Link to={`/session/${session.id}`} className="btn-primary">Pick a seat</Link>
+        {isFull ? (
+          <span className="rounded-full bg-tile-red/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-tile-red">
+            Full
+          </span>
+        ) : (
+          <Link to={`/session/${session.id}`} className="btn-primary">Pick a seat</Link>
+        )}
       </div>
     </article>
   );

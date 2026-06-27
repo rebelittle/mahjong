@@ -5,6 +5,7 @@ import { fetchSessionsInRange } from "../lib/dataApi";
 import { supabase } from "../lib/supabase";
 import type { SessionRow } from "../lib/database.types";
 import { formatSessionDate } from "../lib/utils";
+import { visibleCapacityFromSeats } from "../lib/seatLogic";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -36,6 +37,7 @@ export default function Calendar({ authLoading }: Props) {
   const [fetching, setFetching] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [daySeatCounts, setDaySeatCounts] = useState<Record<string, number>>({});
+  const [daySeatMax, setDaySeatMax] = useState<Record<string, number>>({});
 
   const atMin = year === START_YEAR && month === START_MONTH;
 
@@ -80,24 +82,32 @@ export default function Calendar({ authLoading }: Props) {
   useEffect(() => {
     if (!selectedDay) {
       setDaySeatCounts({});
+      setDaySeatMax({});
       return;
     }
     const daySessions = sessions.filter((s) => toLocalDay(s.starts_at) === selectedDay);
     if (daySessions.length === 0) return;
     const ids = daySessions.map((s) => s.id);
-    type SeatLite = { session_id: string; profile_id: string | null };
+    type SeatLite = { session_id: string; profile_id: string | null; table_number: number };
     void (async () => {
       try {
         const { data } = await supabase
           .from("seats")
-          .select("session_id, profile_id")
+          .select("session_id, profile_id, table_number")
           .in("session_id", ids);
+        const rows = (data ?? []) as unknown as SeatLite[];
         const counts: Record<string, number> = {};
-        for (const id of ids) counts[id] = 0;
-        for (const s of (data ?? []) as unknown as SeatLite[]) {
-          if (s.profile_id) counts[s.session_id] = (counts[s.session_id] ?? 0) + 1;
+        const maxes: Record<string, number> = {};
+        for (const s of daySessions) {
+          const tpl = SESSION_TEMPLATES.find((t) => t.type === s.type);
+          const own = rows.filter((r) => r.session_id === s.id);
+          counts[s.id] = own.filter((r) => r.profile_id).length;
+          maxes[s.id] = tpl
+            ? visibleCapacityFromSeats(own, tpl.maxTables, tpl.fixedTables)
+            : 0;
         }
         setDaySeatCounts(counts);
+        setDaySeatMax(maxes);
       } catch (err) {
         console.error(err);
       }
@@ -242,6 +252,7 @@ export default function Calendar({ authLoading }: Props) {
                 key={s.id}
                 session={s}
                 seatsTaken={daySeatCounts[s.id] ?? 0}
+                seatsMax={daySeatMax[s.id] ?? 0}
               />
             ))}
           </div>
@@ -270,19 +281,19 @@ export default function Calendar({ authLoading }: Props) {
 function CalendarSessionCard({
   session,
   seatsTaken,
+  seatsMax,
 }: {
   session: SessionRow;
   seatsTaken: number;
+  seatsMax: number;
 }) {
   const tpl = SESSION_TEMPLATES.find((t) => t.type === session.type);
   if (!tpl) return null;
 
-  const max = tpl.maxTables;
-  const visibleMax = tpl.fixedTables !== undefined
-    ? tpl.fixedTables * 4
-    : max <= 2
-      ? seatsTaken >= 4 ? 8 : 4
-      : seatsTaken >= 12 ? 16 : seatsTaken >= 8 ? 12 : 8;
+  // Capacity comes from the real seat rows (see seatLogic); fall back to one
+  // table until the counts load.
+  const visibleMax = seatsMax || 4;
+  const isFull = seatsTaken >= visibleMax;
 
   const d = formatSessionDate(session.starts_at);
   const end = formatSessionDate(session.ends_at);
@@ -313,9 +324,15 @@ function CalendarSessionCard({
           <span className="font-semibold text-fox-navy-700">{seatsTaken}</span>
           <span className="text-fox-ink/50"> / {visibleMax} seats</span>
         </span>
-        <Link to={`/session/${session.id}`} className="btn-primary">
-          Pick a seat
-        </Link>
+        {isFull ? (
+          <span className="rounded-full bg-tile-red/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-tile-red">
+            Full
+          </span>
+        ) : (
+          <Link to={`/session/${session.id}`} className="btn-primary">
+            Pick a seat
+          </Link>
+        )}
       </div>
     </article>
   );
