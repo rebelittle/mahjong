@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { SESSION_AMENITIES, SESSION_TEMPLATES, type SessionTemplate } from "../data/sessionTemplates";
 import { ensureSessionsMaterialized, fetchNextSessions } from "../lib/dataApi";
@@ -19,12 +19,17 @@ export default function HomePage() {
   const [seatCounts, setSeatCounts] = useState<Record<string, number>>({});
   const [seatMaxes, setSeatMaxes] = useState<Record<string, number>>({});
 
+  // Horizontal carousel for the upcoming-session cards.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
   useEffect(() => {
     if (authLoading) return;
     let alive = true;
     (async () => {
       await ensureSessionsMaterialized(5, PROGRAMME_START);
-      const sessions = await fetchNextSessions(3);
+      const sessions = await fetchNextSessions(12);
       if (!alive) return;
       setNextSessions(sessions);
       if (sessions.length > 0) {
@@ -53,6 +58,32 @@ export default function HomePage() {
     })();
     return () => { alive = false; };
   }, [authLoading]);
+
+  // Enable/disable the carousel arrows based on scroll position.
+  const updateArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateArrows();
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    window.addEventListener("resize", updateArrows);
+    return () => {
+      el.removeEventListener("scroll", updateArrows);
+      window.removeEventListener("resize", updateArrows);
+    };
+  }, [updateArrows, nextSessions]);
+
+  function scrollByPage(dir: number) {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
+  }
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 pt-10 sm:px-6">
@@ -88,30 +119,61 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Next 3 session cards ── */}
-      <div id="sessions" className="mb-4 flex items-baseline justify-between">
+      {/* ── Upcoming session cards (scrollable carousel) ── */}
+      <div id="sessions" className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-2xl">Upcoming sessions</h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => scrollByPage(-1)}
+            disabled={!canLeft}
+            aria-label="Previous sessions"
+            className="grid h-9 w-9 place-items-center rounded-full border border-fox-cream-200 bg-white text-lg text-fox-navy-700 shadow-sm transition hover:bg-fox-cream-100 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollByPage(1)}
+            disabled={!canRight}
+            aria-label="Next sessions"
+            className="grid h-9 w-9 place-items-center rounded-full border border-fox-cream-200 bg-white text-lg text-fox-navy-700 shadow-sm transition hover:bg-fox-cream-100 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            ›
+          </button>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {nextSessions.length > 0
-          ? nextSessions.map((session) => {
-              const tpl = SESSION_TEMPLATES.find((t) => t.type === session.type);
-              if (!tpl) return null;
-              return (
+      {nextSessions.length > 0 ? (
+        <div
+          ref={scrollRef}
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-3 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {nextSessions.map((session) => {
+            const tpl = SESSION_TEMPLATES.find((t) => t.type === session.type);
+            if (!tpl) return null;
+            return (
+              <div
+                key={session.id}
+                className="shrink-0 snap-start basis-full sm:basis-[calc(50%_-_0.5rem)] lg:basis-[calc(33.333%_-_0.667rem)]"
+              >
                 <SessionCard
-                  key={session.id}
                   template={tpl}
                   session={session}
                   seatsTaken={seatCounts[session.id] ?? 0}
                   seatsMax={seatMaxes[session.id] ?? 0}
                 />
-              );
-            })
-          : SESSION_TEMPLATES.slice(0, 3).map((tpl) => (
-              <SessionCardSkeleton key={tpl.type} template={tpl} />
-            ))}
-      </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {SESSION_TEMPLATES.slice(0, 3).map((tpl) => (
+            <SessionCardSkeleton key={tpl.type} template={tpl} />
+          ))}
+        </div>
+      )}
 
       {/* ── Monthly calendar ── */}
       <div className="mb-4 mt-12 flex items-baseline justify-between">
@@ -174,7 +236,7 @@ function SessionCard({
   const isFull = seatsTaken >= visibleMax;
 
   return (
-    <article className="group card relative flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
+    <article className="group card relative flex h-full flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fox-yellow-500/60 via-fox-yellow-300/50 to-fox-yellow-500/60 opacity-0 transition group-hover:opacity-100" />
       <div className="flex items-start gap-3 border-b border-fox-cream-200 p-5">
         <CardTile glyph={template.glyph} color={template.glyphColor} />
