@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { useUser, useClerk, useSignIn } from "@clerk/clerk-react";
 import { supabase } from "./supabase";
+import { upsertMyProfile } from "./dataApi";
 import type { Profile } from "./database.types";
 
 // Shape preserved (minus signInWithEmail) so downstream consumers
-// (Header, LoginPage, ProfilePage, MePage, SessionPage, HomePage) don't
-// need to change. user/session are narrowed to just the fields the rest
-// of the app actually reads (id, email).
+// (Header, LoginPage, MePage, SessionPage, HomePage) don't need to change.
+// user/session are narrowed to just the fields the rest of the app actually
+// reads (id, email).
 interface AuthUser {
   id: string;
   email: string;
@@ -41,7 +42,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const userId = clerkUser?.id ?? null;
   const email = clerkUser?.primaryEmailAddress?.emailAddress ?? "";
 
-  const loadProfile = useCallback(async (id: string) => {
+  // Name + photo come straight from the Google account (via Clerk) so the
+  // user never has to type anything. Pull the primitives out here so the
+  // provisioning effect below depends on stable strings, not the clerkUser
+  // object identity (which changes every render).
+  const clerkFullName = clerkUser?.fullName ?? "";
+  const clerkFirstName = clerkUser?.firstName ?? "";
+  const clerkLastName = clerkUser?.lastName ?? "";
+  const clerkImageUrl = clerkUser?.imageUrl ?? null;
+
+  const loadProfile = useCallback(async (id: string): Promise<Profile | null> => {
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -51,12 +61,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error("Profile fetch error:", error.message);
         setProfile(null);
-        return;
+        return null;
       }
-      setProfile((data as Profile | null) ?? null);
+      const p = (data as Profile | null) ?? null;
+      setProfile(p);
+      return p;
     } catch (err) {
       console.error("Profile fetch threw:", err);
       setProfile(null);
+      return null;
     }
   }, []);
 
@@ -65,8 +78,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       return;
     }
-    void loadProfile(userId);
-  }, [userId, loadProfile]);
+    let alive = true;
+    (async () => {
+      const existing = await loadProfile(userId);
+      if (!alive || existing) return;
+
+      // First sign-in for this Clerk user: no profile row exists yet, which
+      // would block seat claims (seats.profile_id has an FK to profiles).
+      // Auto-create one from their Google account instead of making them
+      // fill out a form.
+      const fullName = clerkFullName.trim();
+      const combinedName = [clerkFirstName, clerkLastName]
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join(" ");
+      const displayName =
+        fullName || combinedName || (email ? email.split("@")[0] : "Guest");
+
+      try {
+        await upsertMyProfile(userId, email, {
+          display_name: displayName,
+          photo_url: clerkImageUrl,
+        });
+        if (alive) await loadProfile(userId);
+      } catch (err) {
+        console.error("Auto-provision profile failed:", err);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [userId, email, clerkFullName, clerkFirstName, clerkLastName, clerkImageUrl, loadProfile]);
 
   const loading = !userLoaded || !signInLoaded;
 

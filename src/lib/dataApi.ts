@@ -1,5 +1,5 @@
 import { supabase, rpc } from "./supabase";
-import type { Profile, Seat, SessionRow, SkillLevel } from "./database.types";
+import type { Profile, Seat, SessionRow } from "./database.types";
 
 // Ensures upcoming sessions exist as concrete rows. Safe to call on every page load.
 // start_from (YYYY-MM-DD) pins the earliest date sessions are created; pass the
@@ -121,10 +121,11 @@ export async function fetchMyReservations(userId: string): Promise<
     .sort((a, b) => a.session.starts_at.localeCompare(b.session.starts_at));
 }
 
+// Name and photo are sourced automatically from the user's Google account
+// (via Clerk) — there is no manual profile form. Upsert only touches these
+// columns, so any other fields on an existing row are left untouched.
 export interface ProfileInput {
   display_name: string;
-  skill_level: SkillLevel | null;
-  notes: string | null;
   photo_url: string | null;
 }
 
@@ -133,8 +134,6 @@ export async function upsertMyProfile(userId: string, email: string, input: Prof
     id: userId,
     email,
     display_name: input.display_name,
-    skill_level: input.skill_level,
-    notes: input.notes,
     photo_url: input.photo_url,
     updated_at: new Date().toISOString(),
   };

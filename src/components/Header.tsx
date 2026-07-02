@@ -24,10 +24,10 @@ export default function Header() {
               <NavLink to="/me" className={navClass} title="My reservations">
                 My seats
               </NavLink>
-              <NavLink to="/profile" className="ml-1 flex items-center gap-2 rounded-full border border-fox-cream-200 bg-white px-2.5 py-1 pr-3 text-sm transition hover:border-fox-yellow-500/40 hover:bg-fox-cream-50">
+              <NavLink to="/me" className="ml-1 flex items-center gap-2 rounded-full border border-fox-cream-200 bg-white px-2.5 py-1 pr-3 text-sm transition hover:border-fox-yellow-500/40 hover:bg-fox-cream-50">
                 <Avatar profile={profile} />
                 <span className="hidden max-w-[120px] truncate sm:inline">
-                  {profile?.display_name ?? "Set up profile"}
+                  {profile?.display_name ?? "My seats"}
                 </span>
               </NavLink>
               <button

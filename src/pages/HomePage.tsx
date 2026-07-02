@@ -14,7 +14,7 @@ import Calendar from "../components/Calendar";
 const PROGRAMME_START = "2026-06-28";
 
 export default function HomePage() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [nextSessions, setNextSessions] = useState<SessionRow[]>([]);
   const [seatCounts, setSeatCounts] = useState<Record<string, number>>({});
   const [seatMaxes, setSeatMaxes] = useState<Record<string, number>>({});
@@ -105,11 +105,7 @@ export default function HomePage() {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               {user ? (
-                profile ? (
-                  <Link to="/me" className="btn-primary">View my seats</Link>
-                ) : (
-                  <Link to="/profile" className="btn-primary">Finish your profile</Link>
-                )
+                <Link to="/me" className="btn-primary">View my seats</Link>
               ) : (
                 <Link to="/login" className="btn-primary">Sign in to reserve</Link>
               )}
