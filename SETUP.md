@@ -85,6 +85,28 @@ See `PLAN.md § 13 Build Order` for the full sequence.
 
 ---
 
+## 6. Automated roster emails
+
+`.github/workflows/session-email.yml` runs hourly and emails the instructor
+(`mlittle@foxhill-school.com`) the full signup list ~6 hours before each
+session (first eligible session: Tuesday July 14, 2026). One-time setup:
+
+1. Run `supabase/migrations/0015_session_email_log.sql` in the Supabase SQL editor.
+2. Create a Gmail **app password**: <https://myaccount.google.com/apppasswords>
+   (requires 2-Step Verification on the Google account that will send the emails).
+3. Add three more repo secrets under **Settings → Secrets and variables → Actions**:
+   - `SUPABASE_SERVICE_ROLE_KEY` — Supabase dashboard → Project Settings → API → `service_role` key
+   - `GMAIL_USER` — the Gmail address that sends the emails
+   - `GMAIL_APP_PASSWORD` — the app password from step 2
+4. Test it: **Actions → Session roster email → Run workflow** with *test mode*
+   checked and your own email as the recipient override. You should receive the
+   roster for the next upcoming session within a minute.
+
+To change the recipient, edit the `RECIPIENT` default in
+`scripts/send-roster-email.mjs`.
+
+---
+
 ## Common issues
 
 - **`npm run dev` shows a blank page at `/` but works at `/mahjong/`** — that's the GitHub Pages base path. The `/mahjong/` URL is correct.
