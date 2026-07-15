@@ -1,0 +1,44 @@
+name: Signup confirmation email
+
+on:
+  schedule:
+    # Every 15 minutes (GitHub may delay runs). The signup_email_log table
+    # dedupes, so delayed/skipped runs are harmless — guests just get their
+    # confirmation on the next run.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "Test mode: confirm the most recently claimed upcoming seat now, without logging it as sent (sends to GMAIL_USER unless a recipient is given)"
+        type: boolean
+        default: true
+      recipient:
+        description: "Recipient override (redirects all confirmation emails to this address)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  email:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Send signup confirmations
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          TEST_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.test_mode && 'true' || 'false' }}
+          RECIPIENT: ${{ inputs.recipient }}
+        run: node scripts/send-signup-confirmation.mjs

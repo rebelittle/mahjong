@@ -107,6 +107,27 @@ To change the recipient, edit the `RECIPIENT` default in
 
 ---
 
+## 7. Automated signup confirmation emails
+
+`.github/workflows/signup-confirmation-email.yml` runs every 15 minutes and
+emails each guest directly after they sign up for a session ("Thanks for
+signing up, see you on [date]!"). It reuses the same secrets as the roster
+email (section 6), so the only extra setup is:
+
+1. Run `supabase/migrations/0016_signup_email_log.sql` in the Supabase SQL
+   editor. This creates the sent-log table and backfills it with existing
+   signups, so nobody who signed up before this feature gets a retroactive
+   email.
+2. Test it: sign up for an upcoming session, then **Actions → Signup
+   confirmation email → Run workflow** with *test mode* checked. The
+   confirmation for the most recent signup is sent to the `GMAIL_USER`
+   inbox (or the recipient override, if given) without being logged as sent.
+
+Guests receive at most one confirmation per session — switching seats within
+the same session doesn't trigger a second email.
+
+---
+
 ## Common issues
 
 - **`npm run dev` shows a blank page at `/` but works at `/mahjong/`** — that's the GitHub Pages base path. The `/mahjong/` URL is correct.
